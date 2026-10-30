@@ -1,0 +1,129 @@
+import { prisma } from "@/lib/db";
+import { batchDateValue, hhmmSP, todaySP } from "@/lib/time";
+import { approveSelected, rejectOne, rejectRemaining, runCollectNow, unschedule } from "./actions";
+
+export const dynamic = "force-dynamic";
+
+const brl = (v: unknown) => Number(v).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+const REASONS = ["Fora do nicho", "Marca/qualidade ruim", "Preço não é bom", "Já tem parecido", "Outro"];
+const STATUS: Record<string, string> = {
+  scheduled: "⏰ agendada",
+  sent: "✅ enviada",
+  expired: "⚠️ cancelada",
+  approved: "👍 aprovada (sem horário)",
+};
+
+export default async function Aprovacao() {
+  const day = todaySP();
+  const batchDate = batchDateValue(day);
+  const [pending, agenda] = await Promise.all([
+    prisma.offer.findMany({
+      where: { batchDate, status: "pending" },
+      include: { product: true },
+      orderBy: { score: "desc" },
+    }),
+    prisma.offer.findMany({
+      where: { batchDate, status: { in: ["scheduled", "sent", "expired", "approved"] } },
+      include: { product: true, _count: { select: { clicks: true } } },
+      orderBy: [{ slotAt: "asc" }],
+    }),
+  ]);
+
+  return (
+    <>
+      <h1>Lote de hoje</h1>
+      <p className="muted">
+        {day.split("-").reverse().join("/")} · {pending.length} pendente(s) · marque as que vão para o grupo
+      </p>
+
+      {pending.length === 0 && (
+        <div className="card">
+          <p>Nenhuma oferta pendente.</p>
+          <form action={runCollectNow}>
+            <button>🔄 Gerar lote agora</button>
+          </form>
+          <p className="muted">Leva 1–3 minutos. Precisa das credenciais da Shopee e da Claude configuradas.</p>
+        </div>
+      )}
+
+      {pending.length > 0 && (
+        <form action={approveSelected}>
+          {pending.map((o) => (
+            <div className="card" key={o.id}>
+              <div className="row">
+                {o.product.imageUrl && <img className="thumb" src={o.product.imageUrl} alt="" />}
+                <div>
+                  <div className="title">{o.product.title}</div>
+                  <div className="chips">
+                    <span className="chip ok">{brl(o.price)}</span>
+                    {o.realDiscountPct ? <span className="chip ok">-{Math.round(o.realDiscountPct)}%</span> : null}
+                    {o.lowest30d ? <span className="chip">mín. 30d {brl(o.lowest30d)}</span> : null}
+                    <span className="chip warn">nota {o.score?.toFixed(1)}</span>
+                    <span className="chip">{o.tone === "animado" ? "🔥 animado" : "🧐 curador"}</span>
+                    {o.product.rating ? <span className="chip">⭐ {o.product.rating.toFixed(1)}</span> : null}
+                  </div>
+                  {o.scoreReason && <p className="muted">{o.scoreReason}</p>}
+                </div>
+              </div>
+              <textarea name={`msg_${o.id}`} defaultValue={o.message} />
+              <div className="flex" style={{ marginTop: 8 }}>
+                <label className="pick" style={{ flex: 1, marginTop: 0 }}>
+                  <input type="checkbox" name="ids" value={o.id} /> Aprovar
+                </label>
+                <select name={`reason_${o.id}`} style={{ width: "auto" }} defaultValue="">
+                  <option value="">Motivo…</option>
+                  {REASONS.map((r) => (
+                    <option key={r}>{r}</option>
+                  ))}
+                </select>
+                <button className="danger" formAction={rejectOne} name="reject" value={o.id}>
+                  ✕
+                </button>
+              </div>
+              <a className="muted" href={o.product.productUrl} target="_blank">
+                ver na Shopee ↗
+              </a>
+            </div>
+          ))}
+
+          <div className="bar">
+            <div className="inner">
+              <button className="primary">Aprovar marcadas</button>
+              <button formAction={rejectRemaining}>Descartar resto</button>
+            </div>
+          </div>
+        </form>
+      )}
+
+      <h2>Agenda de hoje</h2>
+      {agenda.length === 0 ? (
+        <p className="muted">Nada agendado ainda.</p>
+      ) : (
+        <table className="agenda">
+          <tbody>
+            {agenda.map((o) => (
+              <tr key={o.id}>
+                <td style={{ width: 52 }}>{o.slotAt ? hhmmSP(o.slotAt) : "—"}</td>
+                <td>
+                  {o.product.title.slice(0, 60)}
+                  <div className="muted">
+                    {STATUS[o.status]} · {o._count.clicks} clique(s)
+                    {o.rejectReason ? ` · ${o.rejectReason}` : ""}
+                  </div>
+                </td>
+                <td style={{ width: 40 }}>
+                  {o.status === "scheduled" && (
+                    <form action={unschedule}>
+                      <input type="hidden" name="id" value={o.id} />
+                      <button title="Voltar para o lote">↩︎</button>
+                    </form>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+    </>
+  );
+}

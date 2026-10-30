@@ -1,0 +1,140 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/// Produto da Shopee (um registro por item)
+model Product {
+  id            String          @id @default(cuid())
+  shopeeItemId  String          @unique
+  shopId        String?
+  title         String
+  imageUrl      String?
+  productUrl    String
+  category      String?
+  shopName      String?
+  rating        Float?
+  sales         Int?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  prices        PriceSnapshot[]
+  offers        Offer[]
+}
+
+/// Histórico de preço — base do cálculo de "desconto real"
+model PriceSnapshot {
+  id        String   @id @default(cuid())
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  price     Decimal  @db.Decimal(10, 2)
+  capturedAt DateTime @default(now())
+
+  @@index([productId, capturedAt])
+}
+
+enum OfferStatus {
+  pending   // aguardando aprovação no lote
+  approved  // aprovada, aguardando slot
+  scheduled // com horário definido na fila
+  sent      // enviada
+  rejected  // rejeitada por Marcos
+  expired   // oferta acabou / preço subiu antes do envio
+}
+
+enum Tone {
+  animado
+  curador
+}
+
+/// Oferta candidata (uma por produto por dia de coleta)
+model Offer {
+  id              String      @id @default(cuid())
+  productId       String
+  product         Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
+  batchDate       DateTime    @db.Date
+  price           Decimal     @db.Decimal(10, 2)
+  originalPrice   Decimal?    @db.Decimal(10, 2)
+  lowest30d       Decimal?    @db.Decimal(10, 2)
+  realDiscountPct Float?
+  commissionRate  Float?
+  affiliateLink   String
+  score           Float?
+  scoreReason     String?
+  tone            Tone        @default(animado)
+  message         String
+  status          OfferStatus @default(pending)
+  rejectReason    String?
+  slotAt          DateTime?
+  sentAt          DateTime?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  sends           Send[]
+  clicks          Click[]
+
+  @@unique([productId, batchDate])
+  @@index([status, batchDate])
+}
+
+/// Grupo do WhatsApp (#1, #2, ...)
+model Group {
+  id          String   @id @default(cuid())
+  name        String
+  jid         String?  @unique // id do grupo na Evolution (xxx@g.us)
+  inviteLink  String
+  memberCount Int      @default(0)
+  capacity    Int      @default(1000)
+  active      Boolean  @default(true)
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  sends       Send[]
+}
+
+enum SendStatus {
+  queued
+  sent
+  failed
+}
+
+model Send {
+  id        String     @id @default(cuid())
+  offerId   String
+  offer     Offer      @relation(fields: [offerId], references: [id], onDelete: Cascade)
+  groupId   String
+  group     Group      @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  status    SendStatus @default(queued)
+  error     String?
+  sentAt    DateTime?
+  createdAt DateTime   @default(now())
+
+  @@unique([offerId, groupId])
+}
+
+/// Clique no link curto /o/[id]
+model Click {
+  id        String   @id @default(cuid())
+  offerId   String
+  offer     Offer    @relation(fields: [offerId], references: [id], onDelete: Cascade)
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  @@index([offerId])
+}
+
+/// Configurações editáveis pelo painel (linha única, id = "main")
+model Settings {
+  id               String   @id @default("main")
+  slots            String[] @default(["08:00", "12:00", "15:00", "19:00", "21:00"])
+  batchHour        String   @default("07:00")
+  batchSize        Int      @default(15)
+  toneThreshold    Decimal  @default(80) @db.Decimal(10, 2)
+  minRealDiscount  Float    @default(15)
+  minRating        Float    @default(4.5)
+  keywords         String[] @default(["organizador cozinha", "pote hermético", "utensílios cozinha", "organizador geladeira", "limpeza casa", "decoração casa", "organizador gaveta", "porta temperos", "air fryer acessórios", "cesto organizador"])
+  blockedWords     String[] @default([])
+  updatedAt        DateTime @updatedAt
+}
