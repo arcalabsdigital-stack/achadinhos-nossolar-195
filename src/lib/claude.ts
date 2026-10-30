@@ -43,11 +43,51 @@ export function templateOffer(input: CopyInput & { originalPrice?: number | null
     input.tone === "animado"
       ? `🔥 *${name}*\n\n${old}por *${brl(input.price)}* 😱\n⚡ Corre que oferta assim acaba rápido!`
       : `🏠 *${name}*\n\nAchado que vale a pena pra sua casa.\n${old}por *${brl(input.price)}*`;
-  return { score: 7, reason: "Texto padrão (sem Claude)", message };
+  return { score: 7, reason: "Texto padrão (sem IA)", message };
+}
+
+/** Gemini (Google AI Studio) — tem plano gratuito. Usado quando GEMINI_API_KEY está configurada. */
+async function askGemini(system: string, user: string): Promise<string> {
+  const model = process.env.GEMINI_MODEL || "gemini-2.5-flash-lite";
+  const res = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-goog-api-key": process.env.GEMINI_API_KEY! },
+      body: JSON.stringify({
+        systemInstruction: { parts: [{ text: system }] },
+        contents: [{ role: "user", parts: [{ text: user }] }],
+        generationConfig: { responseMimeType: "application/json", maxOutputTokens: 800 },
+      }),
+    },
+  );
+  const json = (await res.json()) as {
+    candidates?: { content?: { parts?: { text?: string }[] } }[];
+    error?: { message?: string };
+  };
+  if (!res.ok) throw new Error(`Gemini ${res.status}: ${json.error?.message ?? "erro"}`);
+  return json.candidates?.[0]?.content?.parts?.map((p) => p.text ?? "").join("") ?? "";
+}
+
+async function askClaude(system: string, user: string): Promise<string> {
+  const res = await getClient().messages.create({
+    model: MODEL,
+    max_tokens: 600,
+    system,
+    messages: [{ role: "user", content: user }],
+  });
+  return res.content.map((b) => (b.type === "text" ? b.text : "")).join("");
+}
+
+export function aiProvider(): "gemini" | "claude" | null {
+  if (process.env.GEMINI_API_KEY) return "gemini";
+  if (process.env.ANTHROPIC_API_KEY) return "claude";
+  return null;
 }
 
 export async function writeOffer(input: CopyInput & { originalPrice?: number | null }): Promise<CopyResult> {
-  if (!process.env.ANTHROPIC_API_KEY) return templateOffer(input);
+  const provider = aiProvider();
+  if (!provider) return templateOffer(input);
   const facts = [
     `Produto: ${input.title}`,
     `Preço atual: ${brl(input.price)}`,
@@ -61,14 +101,19 @@ export async function writeOffer(input: CopyInput & { originalPrice?: number | n
     `Tom: ${input.tone}`,
   ].filter(Boolean);
 
-  const res = await getClient().messages.create({
-    model: MODEL,
-    max_tokens: 600,
-    system: SYSTEM,
-    messages: [{ role: "user", content: facts.join("\n") }],
-  });
-  const text = res.content.map((b) => (b.type === "text" ? b.text : "")).join("");
-  const json = text.slice(text.indexOf("{"), text.lastIndexOf("}") + 1);
-  const parsed = JSON.parse(json) as CopyResult;
-  return { score: Number(parsed.score) || 0, reason: String(parsed.reason ?? ""), message: String(parsed.message ?? "") };
+  let text: string;
+  try {
+    text = provider === "gemini" ? await askGemini(SYSTEM, facts.join("\n")) : await askClaude(SYSTEM, facts.join("\n"));
+  } catch (e) {
+    console.error(`[ia] ${provider} falhou, usando texto padrão:`, (e as Error).message);
+    return templateOffer(input);
+  }
+  try {
+    const parsed = JSON.parse(text.slice(text.indexOf("{"), text.lastIndexOf("}") + 1)) as CopyResult;
+    if (!parsed.message) throw new Error("resposta sem texto");
+    return { score: Number(parsed.score) || 0, reason: String(parsed.reason ?? ""), message: String(parsed.message) };
+  } catch (e) {
+    console.error(`[ia] resposta inválida do ${provider}:`, (e as Error).message);
+    return templateOffer(input);
+  }
 }

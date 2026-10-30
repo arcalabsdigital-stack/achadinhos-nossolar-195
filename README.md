@@ -67,7 +67,7 @@ Em **➕ Oferta**, cole o link do produto:
 - **Amazon:** qualquer link (amzn.to, página do produto). O sistema extrai o código do produto (ASIN) e monta o link com `AMAZON_TAG` (padrão `nossolar195-20`). As mensagens da Amazon usam o **link direto da Amazon**, porque as regras do programa de Associados não permitem esconder o destino atrás de um redirecionador.
 - **Shopee sem API:** cole o link de afiliado gerado em "Link personalizado" no painel da Shopee.
 
-O sistema tenta ler o nome, o preço e a imagem da página. Se a loja bloquear a leitura, o formulário pede para preencher à mão. O texto da mensagem é escrito pela Claude, ou por um modelo padrão quando `ANTHROPIC_API_KEY` não está configurada. A oferta entra no lote do dia como pendente, para aprovação.
+O sistema tenta ler o nome, o preço e a imagem da página. Se a loja bloquear a leitura, o formulário pede para preencher à mão. O texto da mensagem é escrito pela IA: **Gemini** (`GEMINI_API_KEY`, que tem plano gratuito) ou Claude (`ANTHROPIC_API_KEY`). Sem nenhuma chave, ou se a IA falhar, entra um modelo padrão. A oferta entra no lote do dia como pendente, para aprovação.
 
 ## Regras importantes
 
