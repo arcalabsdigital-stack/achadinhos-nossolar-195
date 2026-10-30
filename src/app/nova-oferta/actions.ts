@@ -31,8 +31,11 @@ export async function addOfferByLink(fd: FormData) {
   const raw = field(fd, "link");
   if (!/^https?:\/\//i.test(raw)) back(fd, "Cole um link começando com https://");
 
+  const t0 = Date.now();
+  const log = (m: string) => console.log(`[nova-oferta] ${m} (${Date.now() - t0}ms)`);
   let source = detectSource(raw);
   const finalUrl = await resolveUrl(raw);
+  log(`link resolvido: ${source} → ${finalUrl.slice(0, 80)}`);
   if (source === "manual") source = detectSource(finalUrl);
 
   let externalId: string;
@@ -75,6 +78,7 @@ export async function addOfferByLink(fd: FormData) {
     back(fd, "Não consegui ler o produto automaticamente. Preencha o nome e o preço e envie de novo.");
   }
 
+  log("dados do produto ok");
   const s = await getSettings();
   const tone = price <= Number(s.toneThreshold) ? "animado" : "curador";
   const ownMessage = field(fd, "message");
@@ -82,6 +86,7 @@ export async function addOfferByLink(fd: FormData) {
     ? { score: 10, reason: "Texto escrito por você", message: ownMessage }
     : await writeOffer({ title, price, originalPrice, lowest30d: null, realDiscountPct: null, rating: null, sales: null, tone });
 
+  log(`texto pronto (${copy.reason})`);
   const product = await prisma.product.upsert({
     where: { source_externalId: { source, externalId } },
     create: { source, externalId, title, imageUrl: imageUrl || null, productUrl, category: "link" },

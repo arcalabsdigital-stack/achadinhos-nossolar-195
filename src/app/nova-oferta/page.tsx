@@ -1,5 +1,6 @@
 import { amazonTag } from "@/lib/links";
 import { addOfferByLink } from "./actions";
+import SubmitButton from "@/components/SubmitButton";
 
 export const dynamic = "force-dynamic";
 
@@ -48,7 +49,7 @@ export default async function NovaOferta({ searchParams }: { searchParams: SP })
           <label>Texto próprio (deixe vazio para gerar automaticamente)</label>
           <textarea name="message" defaultValue={sp.message} />
         </div>
-        <button className="primary">Adicionar ao lote de hoje</button>
+        <SubmitButton pendingText="⏳ Adicionando… (pode levar até 30 s)">Adicionar ao lote de hoje</SubmitButton>
       </form>
     </>
   );

@@ -28,7 +28,12 @@ export async function resolveUrl(url: string, maxHops = 5): Promise<string> {
   let current = url;
   for (let i = 0; i < maxHops; i++) {
     try {
-      const res = await fetch(current, { method: "GET", redirect: "manual", headers: { "User-Agent": UA } });
+      const res = await fetch(current, {
+        method: "GET",
+        redirect: "manual",
+        headers: { "User-Agent": UA },
+        signal: AbortSignal.timeout(5_000),
+      });
       const loc = res.headers.get("location");
       if (res.status >= 300 && res.status < 400 && loc) {
         current = new URL(loc, current).toString();
@@ -90,7 +95,7 @@ export async function fetchMeta(url: string): Promise<PageMeta> {
   try {
     const res = await fetch(url, {
       headers: { "User-Agent": UA, "Accept-Language": "pt-BR,pt;q=0.9" },
-      signal: AbortSignal.timeout(10_000),
+      signal: AbortSignal.timeout(8_000),
     });
     if (!res.ok) return {};
     const html = await res.text();

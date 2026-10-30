@@ -54,10 +54,11 @@ async function askGemini(system: string, user: string): Promise<string> {
     {
       method: "POST",
       headers: { "Content-Type": "application/json", "x-goog-api-key": process.env.GEMINI_API_KEY! },
+      signal: AbortSignal.timeout(25_000),
       body: JSON.stringify({
         systemInstruction: { parts: [{ text: system }] },
         contents: [{ role: "user", parts: [{ text: user }] }],
-        generationConfig: { responseMimeType: "application/json", maxOutputTokens: 800 },
+        generationConfig: { responseMimeType: "application/json", maxOutputTokens: 4096 },
       }),
     },
   );
@@ -75,7 +76,7 @@ async function askClaude(system: string, user: string): Promise<string> {
     max_tokens: 600,
     system,
     messages: [{ role: "user", content: user }],
-  });
+  }, { timeout: 25_000 });
   return res.content.map((b) => (b.type === "text" ? b.text : "")).join("");
 }
 
