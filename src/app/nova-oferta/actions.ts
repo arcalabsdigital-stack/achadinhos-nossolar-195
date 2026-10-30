@@ -41,10 +41,17 @@ export async function addOfferByLink(fd: FormData) {
 
   if (source === "amazon") {
     const asin = amazonAsin(finalUrl) ?? amazonAsin(raw);
-    if (!asin) back(fd, "Não encontrei o código do produto (ASIN) nesse link da Amazon. Cole o link da página do produto.");
-    externalId = asin;
-    affiliateLink = amazonAffiliateLink(asin);
-    productUrl = `https://www.amazon.com.br/dp/${asin}`;
+    if (asin) {
+      externalId = asin;
+      affiliateLink = amazonAffiliateLink(asin);
+      productUrl = `https://www.amazon.com.br/dp/${asin}`;
+    } else {
+      // Link curto da SiteStripe (link.amazon / amzn.to) que não deu para abrir:
+      // ele já vem com a tag de Associado, então é usado como está.
+      externalId = hashId(raw);
+      affiliateLink = raw;
+      productUrl = finalUrl;
+    }
   } else {
     // Shopee sem API ou outra loja: o link colado já deve ser o link de afiliado
     externalId = hashId(finalUrl);

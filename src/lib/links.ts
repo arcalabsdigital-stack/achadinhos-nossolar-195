@@ -2,7 +2,7 @@ import crypto from "node:crypto";
 
 export type LinkSource = "amazon" | "shopee" | "manual";
 
-const AMAZON_HOSTS = ["amazon.com.br", "amzn.to", "a.co"];
+const AMAZON_HOSTS = ["amazon.com.br", "amzn.to", "a.co", "link.amazon"];
 const SHOPEE_HOSTS = ["shopee.com.br", "shp.ee", "s.shopee.com.br"];
 const UA =
   "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1";
