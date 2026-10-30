@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { getSettings } from "@/lib/settings";
-import { batchDateValue, spToDate, todaySP } from "@/lib/time";
+import { batchDateValue, slotToDate, todaySP } from "@/lib/time";
 import { collect } from "@/lib/collector";
 
 /** Aprova as ofertas marcadas e distribui nos próximos horários livres de hoje */
@@ -20,7 +20,7 @@ export async function approveSelected(formData: FormData) {
   });
   const takenTimes = new Set(taken.map((t) => t.slotAt?.getTime()));
   const free = s.slots
-    .map((hhmm) => spToDate(day, hhmm))
+    .map((hhmm) => slotToDate(day, hhmm))
     .filter((d) => d.getTime() > now.getTime() && !takenTimes.has(d.getTime()))
     .sort((a, b) => a.getTime() - b.getTime());
 

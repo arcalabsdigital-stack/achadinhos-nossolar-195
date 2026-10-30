@@ -11,7 +11,11 @@ const list = (v: FormDataEntryValue | null) =>
     .filter(Boolean);
 
 export async function saveSettings(formData: FormData) {
-  const slots = list(formData.get("slots")).filter((s) => /^\d{2}:\d{2}$/.test(s)).sort();
+  // ordena pelo dia de operação (05:00 → 04:59): 00:30 vem depois de 23:30
+  const key = (t: string) => (Number(t.slice(0, 2)) < 5 ? 24 : 0) * 60 + Number(t.slice(0, 2)) * 60 + Number(t.slice(3));
+  const slots = [...new Set(list(formData.get("slots")).filter((s) => /^([01]\d|2[0-3]):[0-5]\d$/.test(s)))].sort(
+    (a, b) => key(a) - key(b),
+  );
   await prisma.settings.update({
     where: { id: "main" },
     data: {
