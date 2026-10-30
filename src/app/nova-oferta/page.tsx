@@ -17,6 +17,11 @@ export default async function NovaOferta({ searchParams }: { searchParams: SP })
         Shopee (enquanto a API não sai): cole o <b>link de afiliado</b> gerado em &quot;Link personalizado&quot;.
       </p>
 
+      {sp.via === "favorito" && !sp.erro && (
+        <p className="notice">
+          Dados lidos da página da Amazon. Confira o nome e o preço e clique em <b>Adicionar ao lote de hoje</b>.
+        </p>
+      )}
       {sp.erro && <p className="notice">{sp.erro}</p>}
 
       <form className="card" action={addOfferByLink}>
