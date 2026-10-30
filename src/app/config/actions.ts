@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
+import { DEFAULT_VOICE } from "@/lib/claude";
 
 const list = (v: FormDataEntryValue | null) =>
   String(v ?? "")
@@ -21,6 +22,11 @@ export async function saveSettings(formData: FormData) {
       minRating: Number(formData.get("minRating")),
       keywords: list(formData.get("keywords")),
       blockedWords: list(formData.get("blockedWords")),
+      // igual ao padrão → guarda vazio, para receber melhorias futuras do padrão
+      voiceNotes: (() => {
+        const v = String(formData.get("voiceNotes") ?? "").replace(/\r\n/g, "\n").trim();
+        return v === DEFAULT_VOICE.trim() ? "" : v;
+      })(),
     },
   });
   revalidatePath("/config");

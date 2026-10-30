@@ -145,5 +145,7 @@ model Settings {
   minRating        Float    @default(4.5)
   keywords         String[] @default(["organizador cozinha", "pote hermético", "utensílios cozinha", "organizador geladeira", "limpeza casa", "decoração casa", "organizador gaveta", "porta temperos", "air fryer acessórios", "cesto organizador"])
   blockedWords     String[] @default([])
+  /// Voz/estilo das mensagens, editável no painel. Vazio = usa o padrão do código.
+  voiceNotes       String   @default("")
   updatedAt        DateTime @updatedAt
 }

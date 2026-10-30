@@ -12,9 +12,26 @@ export type CopyInput = {
   rating: number | null;
   sales: number | null;
   tone: "animado" | "curador";
+  /** Regras de voz definidas no painel (Configurações) */
+  voice?: string;
 };
 
 export type CopyResult = { score: number; reason: string; message: string };
+
+/** Voz padrão do @nossolar195 (a Taty fala com o público, majoritariamente feminino, como "amigonas") */
+export const DEFAULT_VOICE = `Quem fala é a Taty, do @nossolar195. O público é majoritariamente feminino e ela chama as seguidoras de "amigona" / "amigonas".
+- Quando o produto agrada principalmente mulheres ou é bom de presente (beleza, bem-estar, decoração, cozinha bonita, organização, conforto), chame a leitora de "amigona" ou "amigonas", de forma natural (no início ou no fim da mensagem).
+- Em produtos neutros (ferramenta, limpeza pesada, eletrônico de casa), o vocativo é opcional.
+- Quando for pedido para falar com o marido, escreva como a Taty falando com os maridos/namorados das seguidoras, sugerindo dar o produto de presente. Exemplo: "Ei, essa é pra você que é o marido da casa: presenteia minha amigona, ela vai amar!!"
+- Nunca use linguagem de homem falando, nem termos genéricos como "galera" ou "pessoal".`;
+
+/** Sorteia a variação de cada mensagem (a IA sozinha não garante o "de vez em quando") */
+function voiceVariation(): string {
+  const r = Math.random();
+  if (r < 0.2)
+    return 'Variação desta mensagem: SE o produto agradar mulheres ou for bom de presente, fale com o MARIDO/namorado ("presenteia minha amigona"). Se não fizer sentido, ignore esta variação.';
+  return r < 0.6 ? 'Variação desta mensagem: se usar vocativo, use "amigona" (singular).' : 'Variação desta mensagem: se usar vocativo, use "amigonas" (plural).';
+}
 
 const SYSTEM = `Você escreve ofertas para o grupo de WhatsApp "Achadinhos Nosso Lar", do Instagram @nossolar195 (conteúdo de casa e rotina).
 O público quer produtos úteis para casa: cozinha, organização, limpeza e decoração.
@@ -31,18 +48,22 @@ Tons:
 - animado (produtos baratos): energia, emojis (🔥⚡😱), urgência leve. Ex.: "CORRE que tá barato!"
 - curador (produtos mais caros): calmo, confiável, foca em utilidade e qualidade. Ex.: "Avaliamos e vale a pena: ..."
 
-Responda SOMENTE com JSON: {"score": number, "reason": string, "message": string}`;
+Responda SOMENTE com JSON: {"score": number, "reason": string, "message": string}
+
+VOZ E ESTILO (siga sempre):
+`;
 
 const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
 /** Texto padrão, usado quando não há chave da Claude configurada */
 export function templateOffer(input: CopyInput & { originalPrice?: number | null }): CopyResult {
   const name = input.title.length > 70 ? input.title.slice(0, 67) + "..." : input.title;
+  const amiga = Math.random() < 0.5 ? "amigona" : "amigonas";
   const old = input.originalPrice && input.originalPrice > input.price ? `de ~${brl(input.originalPrice)}~ ` : "";
   const message =
     input.tone === "animado"
-      ? `🔥 *${name}*\n\n${old}por *${brl(input.price)}* 😱\n⚡ Corre que oferta assim acaba rápido!`
-      : `🏠 *${name}*\n\nAchado que vale a pena pra sua casa.\n${old}por *${brl(input.price)}*`;
+      ? `🔥 *${name}*\n\n${old}por *${brl(input.price)}* 😱\n⚡ Corre, ${amiga}, que oferta assim acaba rápido!`
+      : `🏠 *${name}*\n\nAchado que vale a pena pra sua casa, ${amiga}.\n${old}por *${brl(input.price)}*`;
   return { score: 7, reason: "Texto padrão (sem IA)", message };
 }
 
@@ -118,11 +139,13 @@ export async function writeOffer(input: CopyInput & { originalPrice?: number | n
     input.rating ? `Avaliação: ${input.rating.toFixed(1)} estrelas` : null,
     input.sales ? `Vendidos: ${input.sales}` : null,
     `Tom: ${input.tone}`,
+    voiceVariation(),
   ].filter(Boolean);
+  const system = SYSTEM + (input.voice?.trim() || DEFAULT_VOICE);
 
   let text: string;
   try {
-    text = provider === "gemini" ? await askGemini(SYSTEM, facts.join("\n")) : await askClaude(SYSTEM, facts.join("\n"));
+    text = provider === "gemini" ? await askGemini(system, facts.join("\n")) : await askClaude(system, facts.join("\n"));
   } catch (e) {
     console.error(`[ia] ${provider} falhou, usando texto padrão:`, (e as Error).message);
     return templateOffer(input);

@@ -1,5 +1,6 @@
 import { getSettings } from "@/lib/settings";
 import { saveSettings } from "./actions";
+import { DEFAULT_VOICE } from "@/lib/claude";
 
 export const dynamic = "force-dynamic";
 
@@ -45,6 +46,14 @@ export default async function Config() {
         <div className="field">
           <label>Palavras bloqueadas (uma por linha)</label>
           <textarea name="blockedWords" defaultValue={s.blockedWords.join("\n")} />
+        </div>
+        <div className="field">
+          <label>Voz das mensagens (como a IA deve escrever)</label>
+          <textarea name="voiceNotes" defaultValue={s.voiceNotes || DEFAULT_VOICE} style={{ minHeight: 220 }} />
+          <p className="muted">
+            O sistema sorteia em cada mensagem: &quot;amigona&quot; (40%), &quot;amigonas&quot; (40%) ou falar com o marido (20%,
+            só quando o produto combina com presente).
+          </p>
         </div>
         <button className="primary">Salvar</button>
       </form>

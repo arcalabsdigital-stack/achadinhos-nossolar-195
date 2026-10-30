@@ -107,6 +107,7 @@ export async function collect(log: (m: string) => void = console.log) {
         rating: c.p.ratingStar,
         sales: c.p.sales,
         tone,
+        voice: s.voiceNotes,
       });
       if (copy.score < 6) continue;
       await prisma.offer.create({

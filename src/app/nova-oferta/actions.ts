@@ -84,7 +84,7 @@ export async function addOfferByLink(fd: FormData) {
   const ownMessage = field(fd, "message");
   const copy = ownMessage
     ? { score: 10, reason: "Texto escrito por você", message: ownMessage }
-    : await writeOffer({ title, price, originalPrice, lowest30d: null, realDiscountPct: null, rating: null, sales: null, tone });
+    : await writeOffer({ title, price, originalPrice, lowest30d: null, realDiscountPct: null, rating: null, sales: null, tone, voice: s.voiceNotes });
 
   log(`texto pronto (${copy.reason})`);
   const product = await prisma.product.upsert({
