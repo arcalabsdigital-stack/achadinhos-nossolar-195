@@ -93,7 +93,7 @@ export default async function Aprovacao() {
                 </button>
               </div>
               <a className="muted" href={o.product.productUrl} target="_blank">
-                ver na Shopee ↗
+                ver na loja ↗
               </a>
             </div>
           ))}
