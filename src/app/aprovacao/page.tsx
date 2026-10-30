@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db";
+import AutoRefresh from "@/components/AutoRefresh";
 import { batchDateValue, hhmmSP, todaySP } from "@/lib/time";
 import { approveSelected, rejectOne, rejectRemaining, runCollectNow, unschedule } from "./actions";
 
@@ -31,6 +32,8 @@ export default async function Aprovacao() {
 
   return (
     <>
+      {/* Atualiza a agenda sozinha — só quando não há lote em edição, para não perder textos alterados */}
+      {pending.length === 0 && agenda.some((o) => o.status === "scheduled") && <AutoRefresh seconds={30} />}
       <h1>Lote de hoje</h1>
       <p className="muted">
         {day.split("-").reverse().join("/")} · {pending.length} pendente(s) · marque as que vão para o grupo
