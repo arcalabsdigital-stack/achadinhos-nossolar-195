@@ -46,28 +46,46 @@ export function templateOffer(input: CopyInput & { originalPrice?: number | null
   return { score: 7, reason: "Texto padrão (sem IA)", message };
 }
 
-/** Gemini (Google AI Studio) — tem plano gratuito. Usado quando GEMINI_API_KEY está configurada. */
-async function askGemini(system: string, user: string): Promise<string> {
-  const model = process.env.GEMINI_MODEL || "gemini-2.5-flash-lite";
-  const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "x-goog-api-key": process.env.GEMINI_API_KEY! },
-      signal: AbortSignal.timeout(25_000),
-      body: JSON.stringify({
-        systemInstruction: { parts: [{ text: system }] },
-        contents: [{ role: "user", parts: [{ text: user }] }],
-        generationConfig: { responseMimeType: "application/json", maxOutputTokens: 4096 },
-      }),
-    },
-  );
-  const json = (await res.json()) as {
+/**
+ * Gemini (Google AI Studio) — tem plano gratuito. Usado quando GEMINI_API_KEY está configurada.
+ * No plano gratuito o modelo principal às vezes responde 503 ("high demand"); por isso tenta
+ * modelos alternativos em sequência antes de cair no texto padrão.
+ */
+const GEMINI_FALLBACKS = ["gemini-flash-lite-latest", "gemini-2.5-flash-lite"];
+
+async function geminiOnce(model: string, system: string, user: string): Promise<string> {
+  const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "x-goog-api-key": process.env.GEMINI_API_KEY! },
+    signal: AbortSignal.timeout(10_000),
+    body: JSON.stringify({
+      systemInstruction: { parts: [{ text: system }] },
+      contents: [{ role: "user", parts: [{ text: user }] }],
+      generationConfig: { responseMimeType: "application/json", maxOutputTokens: 4096 },
+    }),
+  });
+  const json = (await res.json().catch(() => ({}))) as {
     candidates?: { content?: { parts?: { text?: string }[] } }[];
     error?: { message?: string };
   };
-  if (!res.ok) throw new Error(`Gemini ${res.status}: ${json.error?.message ?? "erro"}`);
-  return json.candidates?.[0]?.content?.parts?.map((p) => p.text ?? "").join("") ?? "";
+  if (!res.ok) throw new Error(`Gemini ${res.status} (${model}): ${json.error?.message ?? "erro"}`);
+  const text = json.candidates?.[0]?.content?.parts?.map((p) => p.text ?? "").join("") ?? "";
+  if (!text.includes("{")) throw new Error(`Gemini (${model}) respondeu sem JSON`);
+  return text;
+}
+
+async function askGemini(system: string, user: string): Promise<string> {
+  const models = [...new Set([process.env.GEMINI_MODEL || "gemini-flash-latest", ...GEMINI_FALLBACKS])];
+  let lastError: Error = new Error("sem modelos");
+  for (const model of models) {
+    try {
+      return await geminiOnce(model, system, user);
+    } catch (e) {
+      lastError = e as Error;
+      console.warn(`[ia] ${lastError.message} — tentando o próximo modelo`);
+    }
+  }
+  throw lastError;
 }
 
 async function askClaude(system: string, user: string): Promise<string> {
