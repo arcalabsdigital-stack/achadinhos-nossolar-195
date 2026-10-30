@@ -7,10 +7,17 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-/// Produto da Shopee (um registro por item)
+enum Source {
+  shopee // coletado pela API da Shopee
+  amazon // adicionado por link (Amazon Associados)
+  manual // link de afiliado colado manualmente (ex.: Shopee sem API)
+}
+
+/// Produto (um registro por item de cada loja)
 model Product {
   id            String          @id @default(cuid())
-  shopeeItemId  String          @unique
+  source        Source          @default(shopee)
+  externalId    String          // itemId da Shopee, ASIN da Amazon ou hash do link
   shopId        String?
   title         String
   imageUrl      String?
@@ -23,6 +30,8 @@ model Product {
   updatedAt     DateTime        @updatedAt
   prices        PriceSnapshot[]
   offers        Offer[]
+
+  @@unique([source, externalId])
 }
 
 /// Histórico de preço — base do cálculo de "desconto real"

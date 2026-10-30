@@ -10,6 +10,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         <nav>
           <a href="/aprovacao">✅ Aprovação</a>
+          <a href="/nova-oferta">➕ Oferta</a>
           <a href="/grupos">👥 Grupos</a>
           <a href="/config">⚙️ Configurações</a>
         </nav>

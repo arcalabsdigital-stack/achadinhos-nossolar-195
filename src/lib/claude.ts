@@ -35,13 +35,27 @@ Responda SOMENTE com JSON: {"score": number, "reason": string, "message": string
 
 const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
-export async function writeOffer(input: CopyInput): Promise<CopyResult> {
+/** Texto padrão, usado quando não há chave da Claude configurada */
+export function templateOffer(input: CopyInput & { originalPrice?: number | null }): CopyResult {
+  const name = input.title.length > 70 ? input.title.slice(0, 67) + "..." : input.title;
+  const old = input.originalPrice && input.originalPrice > input.price ? `de ~${brl(input.originalPrice)}~ ` : "";
+  const message =
+    input.tone === "animado"
+      ? `🔥 *${name}*\n\n${old}por *${brl(input.price)}* 😱\n⚡ Corre que oferta assim acaba rápido!`
+      : `🏠 *${name}*\n\nAchado que vale a pena pra sua casa.\n${old}por *${brl(input.price)}*`;
+  return { score: 7, reason: "Texto padrão (sem Claude)", message };
+}
+
+export async function writeOffer(input: CopyInput & { originalPrice?: number | null }): Promise<CopyResult> {
+  if (!process.env.ANTHROPIC_API_KEY) return templateOffer(input);
   const facts = [
     `Produto: ${input.title}`,
     `Preço atual: ${brl(input.price)}`,
-    input.lowest30d && input.realDiscountPct && input.realDiscountPct > 0
-      ? `Preço de referência (maior dos últimos 30 dias): ${brl(input.price / (1 - input.realDiscountPct / 100))}`
-      : null,
+    input.originalPrice && input.originalPrice > input.price
+      ? `Preço antigo informado pela loja: ${brl(input.originalPrice)}`
+      : input.lowest30d && input.realDiscountPct && input.realDiscountPct > 0
+        ? `Preço de referência (maior dos últimos 30 dias): ${brl(input.price / (1 - input.realDiscountPct / 100))}`
+        : null,
     input.rating ? `Avaliação: ${input.rating.toFixed(1)} estrelas` : null,
     input.sales ? `Vendidos: ${input.sales}` : null,
     `Tom: ${input.tone}`,

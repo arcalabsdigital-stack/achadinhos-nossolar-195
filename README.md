@@ -10,6 +10,7 @@ Sistema de ofertas da Shopee para os grupos de WhatsApp do @nossolar195.
 |---|---|
 | `src/app/aprovacao` | Painel de aprovação em lote + agenda do dia |
 | `src/app/grupos` | Cadastro dos grupos (#1, #2…) e vínculo com a Evolution |
+| `src/app/nova-oferta` | **Oferta por link**: Amazon (tag aplicada sozinha) e links de afiliado da Shopee sem API |
 | `src/app/config` | Horários, palavras-chave, regra de tom, filtros |
 | `src/app/grupo` | **Redirecionador público** `/grupo` → primeiro grupo com vaga |
 | `src/app/o/[id]` | Link curto rastreável de cada oferta |
@@ -58,6 +59,14 @@ O banco é criado sozinho na primeira subida do serviço web, via `prisma db pus
 4. Aprove algumas ofertas. Com `SENDING_ENABLED=false`, o envio só aparece no log do worker (**simulação**).
 5. Se o texto e os horários estiverem certos, mude para `SENDING_ENABLED=true`.
 6. Troque o link da bio para `https://<domínio>/grupo`.
+
+## Ofertas por link (Amazon e Shopee manual)
+
+Em **➕ Oferta**, cole o link do produto:
+- **Amazon:** qualquer link (amzn.to, página do produto). O sistema extrai o código do produto (ASIN) e monta o link com `AMAZON_TAG` (padrão `nossolar195-20`). As mensagens da Amazon usam o **link direto da Amazon**, porque as regras do programa de Associados não permitem esconder o destino atrás de um redirecionador.
+- **Shopee sem API:** cole o link de afiliado gerado em "Link personalizado" no painel da Shopee.
+
+O sistema tenta ler o nome, o preço e a imagem da página. Se a loja bloquear a leitura, o formulário pede para preencher à mão. O texto da mensagem é escrito pela Claude, ou por um modelo padrão quando `ANTHROPIC_API_KEY` não está configurada. A oferta entra no lote do dia como pendente, para aprovação.
 
 ## Regras importantes
 

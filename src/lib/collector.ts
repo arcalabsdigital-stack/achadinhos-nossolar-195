@@ -18,9 +18,10 @@ type Candidate = {
 
 async function upsertProduct(p: ShopeeProduct, category: string) {
   const product = await prisma.product.upsert({
-    where: { shopeeItemId: p.itemId },
+    where: { source_externalId: { source: "shopee", externalId: p.itemId } },
     create: {
-      shopeeItemId: p.itemId,
+      source: "shopee",
+      externalId: p.itemId,
       shopId: p.shopId,
       title: p.productName,
       imageUrl: p.imageUrl,
@@ -42,6 +43,10 @@ async function upsertProduct(p: ShopeeProduct, category: string) {
 }
 
 export async function collect(log: (m: string) => void = console.log) {
+  if (!process.env.SHOPEE_APP_ID || !process.env.SHOPEE_APP_SECRET) {
+    log("[coletor] credenciais da Shopee ainda não configuradas — coleta automática pulada");
+    return 0;
+  }
   const s = await getSettings();
   const day = todaySP();
   const batchDate = batchDateValue(day);

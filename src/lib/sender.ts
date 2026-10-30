@@ -26,9 +26,9 @@ export async function processDueOffers(log: (m: string) => void = console.log) {
     }
 
     // Reverifica preço na Shopee antes de enviar
-    if (offer.product.shopId) {
+    if (offer.product.source === "shopee" && offer.product.shopId && process.env.SHOPEE_APP_ID) {
       try {
-        const fresh = await getProduct(offer.product.shopId, offer.product.shopeeItemId);
+        const fresh = await getProduct(offer.product.shopId, offer.product.externalId);
         if (!fresh || fresh.price > Number(offer.price) * PRICE_TOLERANCE) {
           await prisma.offer.update({
             where: { id: offer.id },
@@ -42,7 +42,7 @@ export async function processDueOffers(log: (m: string) => void = console.log) {
       }
     }
 
-    const text = finalMessage(offer.message, offer.id);
+    const text = finalMessage(offer.message, offer.id, offer.product.source, offer.affiliateLink);
     for (const g of groups) {
       const send = await prisma.send.upsert({
         where: { offerId_groupId: { offerId: offer.id, groupId: g.id } },

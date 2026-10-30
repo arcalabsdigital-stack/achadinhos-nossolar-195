@@ -39,11 +39,22 @@ export default async function Aprovacao() {
       {pending.length === 0 && (
         <div className="card">
           <p>Nenhuma oferta pendente.</p>
-          <form action={runCollectNow}>
-            <button>🔄 Gerar lote agora</button>
-          </form>
-          <p className="muted">Leva 1–3 minutos. Precisa das credenciais da Shopee e da Claude configuradas.</p>
+          <div className="flex">
+            <a href="/nova-oferta">
+              <button type="button" className="primary">➕ Adicionar por link</button>
+            </a>
+            <form action={runCollectNow}>
+              <button>🔄 Gerar lote da Shopee</button>
+            </form>
+          </div>
+          <p className="muted">O lote automático da Shopee depende da liberação da API.</p>
         </div>
+      )}
+
+      {pending.length > 0 && (
+        <p>
+          <a href="/nova-oferta">➕ Adicionar oferta por link</a>
+        </p>
       )}
 
       {pending.length > 0 && (
@@ -55,6 +66,7 @@ export default async function Aprovacao() {
                 <div>
                   <div className="title">{o.product.title}</div>
                   <div className="chips">
+                    <span className="chip">{({ amazon: "Amazon", shopee: "Shopee", manual: "Link" } as Record<string, string>)[o.product.source]}</span>
                     <span className="chip ok">{brl(o.price)}</span>
                     {o.realDiscountPct ? <span className="chip ok">-{Math.round(o.realDiscountPct)}%</span> : null}
                     {o.lowest30d ? <span className="chip">mín. 30d {brl(o.lowest30d)}</span> : null}
