@@ -88,7 +88,7 @@ export default async function Aprovacao() {
                     <option key={r}>{r}</option>
                   ))}
                 </select>
-                <button className="danger" formAction={rejectOne} name="reject" value={o.id}>
+                <button className="danger" formAction={rejectOne.bind(null, o.id)}>
                   ✕
                 </button>
               </div>

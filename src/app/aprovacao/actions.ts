@@ -28,8 +28,8 @@ export async function approveSelected(formData: FormData) {
   for (const [i, id] of ids.entries()) {
     const slot = free[i];
     const message = String(formData.get(`msg_${id}`) ?? "").trim();
-    await prisma.offer.update({
-      where: { id },
+    await prisma.offer.updateMany({
+      where: { id, status: "pending" },
       data: slot
         ? { status: "scheduled", slotAt: slot, ...(message ? { message } : {}) }
         : { status: "approved", ...(message ? { message } : {}) }, // sem horário livre: fica aprovada, sem agenda
@@ -38,10 +38,9 @@ export async function approveSelected(formData: FormData) {
   revalidatePath("/aprovacao");
 }
 
-export async function rejectOne(formData: FormData) {
-  const id = String(formData.get("reject"));
+export async function rejectOne(id: string, formData: FormData) {
   const reason = String(formData.get(`reason_${id}`) ?? "") || null;
-  await prisma.offer.update({ where: { id }, data: { status: "rejected", rejectReason: reason } });
+  await prisma.offer.updateMany({ where: { id }, data: { status: "rejected", rejectReason: reason } });
   revalidatePath("/aprovacao");
 }
 
@@ -55,7 +54,7 @@ export async function rejectRemaining() {
 
 export async function unschedule(formData: FormData) {
   const id = String(formData.get("id"));
-  await prisma.offer.update({ where: { id }, data: { status: "pending", slotAt: null } });
+  await prisma.offer.updateMany({ where: { id, status: "scheduled" }, data: { status: "pending", slotAt: null } });
   revalidatePath("/aprovacao");
 }
 
