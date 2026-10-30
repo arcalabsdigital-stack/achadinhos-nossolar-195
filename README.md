@@ -18,7 +18,8 @@ Sistema de ofertas da Shopee para os grupos de WhatsApp do @nossolar195.
 | `src/lib/collector.ts` | Coleta, histórico de preço, filtros e geração do lote |
 | `src/lib/claude.ts` | Nota de aderência ao nicho + texto (tom animado/curador) |
 | `src/lib/sender.ts` | Reverificação de preço e envio aos grupos |
-| `src/worker/index.ts` | Agendamentos (coleta 05:30, envio a cada minuto, membros de hora em hora) |
+| `src/worker/schedule.ts` | Agendamentos (coleta 05:30, envio a cada minuto, membros de hora em hora). **Rodam dentro do serviço web** via `src/instrumentation.ts` — não é preciso um worker separado |
+| `src/app/whatsapp` | Conecta o WhatsApp na Evolution e mostra o QR Code no painel |
 
 ## Deploy no Railway
 

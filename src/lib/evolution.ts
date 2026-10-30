@@ -41,3 +41,46 @@ export async function sendImage(jid: string, imageUrl: string, caption: string) 
     caption,
   });
 }
+
+// ---- Conexão da instância (QR Code) ----
+
+export function evolutionConfigured() {
+  return Boolean(process.env.EVOLUTION_URL && process.env.EVOLUTION_API_KEY);
+}
+
+export async function connectionState(): Promise<string> {
+  const { instance } = cfg();
+  try {
+    const r = await call<{ instance?: { state?: string }; state?: string }>(
+      "GET",
+      `/instance/connectionState/${instance}`,
+    );
+    return r.instance?.state ?? r.state ?? "unknown";
+  } catch (e) {
+    if (/404|not exist|não existe/i.test((e as Error).message)) return "missing";
+    throw e;
+  }
+}
+
+type QrResponse = { base64?: string; code?: string; pairingCode?: string; qrcode?: { base64?: string; code?: string } };
+
+export async function createInstance(): Promise<QrResponse> {
+  const { instance } = cfg();
+  const r = await call<QrResponse>("POST", "/instance/create", {
+    instanceName: instance,
+    integration: "WHATSAPP-BAILEYS",
+    qrcode: true,
+  });
+  return r.qrcode ?? r;
+}
+
+export async function getQr(): Promise<QrResponse> {
+  const { instance } = cfg();
+  return call<QrResponse>("GET", `/instance/connect/${instance}`);
+}
+
+export async function logoutInstance() {
+  const { instance } = cfg();
+  const { url, key } = cfg();
+  await fetch(`${url}/instance/logout/${instance}`, { method: "DELETE", headers: { apikey: key } });
+}
