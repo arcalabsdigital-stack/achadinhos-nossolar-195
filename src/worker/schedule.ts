@@ -1,6 +1,7 @@
 import cron from "node-cron";
 import { collect } from "../lib/collector";
 import { processDueOffers, syncGroupSizes } from "../lib/sender";
+import { fillQueue } from "../lib/queue";
 
 const TZ = { timezone: "America/Sao_Paulo" };
 const g = globalThis as unknown as { __achadinhosScheduler?: boolean };
@@ -29,6 +30,7 @@ export function startScheduler(origin: string) {
       if (sending) return;
       sending = true;
       try {
+        await fillQueue(); // aprovadas sem horário ocupam os próximos horários livres
         await processDueOffers();
       } finally {
         sending = false;

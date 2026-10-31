@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/db";
 import AutoRefresh from "@/components/AutoRefresh";
-import { batchDateValue, hhmmSP, todaySP } from "@/lib/time";
+import { batchDateValue, hhmmSP, slotToDate, todaySP } from "@/lib/time";
 import { approveSelected, rejectOne, rejectRemaining, runCollectNow, unschedule } from "./actions";
 
 export const dynamic = "force-dynamic";
@@ -11,7 +11,7 @@ const STATUS: Record<string, string> = {
   scheduled: "⏰ agendada",
   sent: "✅ enviada",
   expired: "⚠️ cancelada",
-  approved: "👍 aprovada (sem horário)",
+  approved: "⏳ na fila (sem horário livre)",
 };
 
 export default async function Aprovacao() {
@@ -24,9 +24,18 @@ export default async function Aprovacao() {
       orderBy: { score: "desc" },
     }),
     prisma.offer.findMany({
-      where: { batchDate, status: { in: ["scheduled", "sent", "expired", "approved"] } },
+      where: {
+        OR: [
+          // tudo o que tem horário a partir do início do dia de operação (hoje e fila de amanhã)
+          { status: { in: ["scheduled", "sent", "expired"] }, slotAt: { gte: slotToDate(day, "05:00") } },
+          // aprovadas ainda sem horário (fila)
+          { status: "approved" },
+          // canceladas hoje sem horário
+          { status: "expired", slotAt: null, batchDate },
+        ],
+      },
       include: { product: true, _count: { select: { clicks: true } } },
-      orderBy: [{ slotAt: "asc" }],
+      orderBy: [{ slotAt: { sort: "asc", nulls: "last" } }, { updatedAt: "asc" }],
     }),
   ]);
 
@@ -110,7 +119,7 @@ export default async function Aprovacao() {
         </form>
       )}
 
-      <h2>Agenda de hoje</h2>
+      <h2>Agenda e fila</h2>
       {agenda.length === 0 ? (
         <p className="muted">Nada agendado ainda.</p>
       ) : (
@@ -118,7 +127,18 @@ export default async function Aprovacao() {
           <tbody>
             {agenda.map((o) => (
               <tr key={o.id}>
-                <td style={{ width: 52 }}>{o.slotAt ? hhmmSP(o.slotAt) : "—"}</td>
+                <td style={{ width: 64 }}>
+                  {o.slotAt ? (
+                    <>
+                      {o.slotAt.getTime() >= slotToDate(day, "05:00").getTime() + 24 * 3600_000 && (
+                        <div className="muted">amanhã</div>
+                      )}
+                      {hhmmSP(o.slotAt)}
+                    </>
+                  ) : (
+                    "—"
+                  )}
+                </td>
                 <td>
                   {o.product.title.slice(0, 60)}
                   <div className="muted">
@@ -127,7 +147,7 @@ export default async function Aprovacao() {
                   </div>
                 </td>
                 <td style={{ width: 40 }}>
-                  {o.status === "scheduled" && (
+                  {(o.status === "scheduled" || o.status === "approved") && (
                     <form action={unschedule}>
                       <input type="hidden" name="id" value={o.id} />
                       <button title="Voltar para o lote">↩︎</button>

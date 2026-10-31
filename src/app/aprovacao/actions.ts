@@ -2,39 +2,23 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
-import { getSettings } from "@/lib/settings";
-import { batchDateValue, slotToDate, todaySP } from "@/lib/time";
+import { batchDateValue } from "@/lib/time";
+import { fillQueue } from "@/lib/queue";
 import { collect } from "@/lib/collector";
 
-/** Aprova as ofertas marcadas e distribui nos próximos horários livres de hoje */
+/** Aprova as ofertas marcadas e coloca na fila (ocupam os próximos horários livres, hoje ou amanhã) */
 export async function approveSelected(formData: FormData) {
   const ids = formData.getAll("ids").map(String);
   if (!ids.length) return;
-  const s = await getSettings();
-  const day = todaySP();
-  const now = new Date();
-
-  const taken = await prisma.offer.findMany({
-    where: { batchDate: batchDateValue(day), status: { in: ["scheduled", "sent"] } },
-    select: { slotAt: true },
-  });
-  const takenTimes = new Set(taken.map((t) => t.slotAt?.getTime()));
-  const free = s.slots
-    .map((hhmm) => slotToDate(day, hhmm))
-    .filter((d) => d.getTime() > now.getTime() && !takenTimes.has(d.getTime()))
-    .sort((a, b) => a.getTime() - b.getTime());
-
-  // mantém a ordem da tela (melhor nota primeiro)
-  for (const [i, id] of ids.entries()) {
-    const slot = free[i];
+  // mantém a ordem da tela (melhor nota primeiro): cada update tem um updatedAt maior
+  for (const id of ids) {
     const message = String(formData.get(`msg_${id}`) ?? "").trim();
     await prisma.offer.updateMany({
       where: { id, status: "pending" },
-      data: slot
-        ? { status: "scheduled", slotAt: slot, ...(message ? { message } : {}) }
-        : { status: "approved", ...(message ? { message } : {}) }, // sem horário livre: fica aprovada, sem agenda
+      data: { status: "approved", ...(message ? { message } : {}) },
     });
   }
+  await fillQueue();
   revalidatePath("/aprovacao");
 }
 
@@ -54,7 +38,11 @@ export async function rejectRemaining() {
 
 export async function unschedule(formData: FormData) {
   const id = String(formData.get("id"));
-  await prisma.offer.updateMany({ where: { id, status: "scheduled" }, data: { status: "pending", slotAt: null } });
+  await prisma.offer.updateMany({
+    where: { id, status: { in: ["scheduled", "approved"] } },
+    data: { status: "pending", slotAt: null },
+  });
+  await fillQueue(); // outra oferta da fila ocupa o horário liberado
   revalidatePath("/aprovacao");
 }
 
