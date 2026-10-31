@@ -20,17 +20,35 @@ export type CopyResult = { score: number; reason: string; message: string };
 
 /** Voz padrão do @nossolar195 (a Taty fala com o público, majoritariamente feminino, como "amigonas") */
 export const DEFAULT_VOICE = `Quem fala é a Taty, do @nossolar195. O público é majoritariamente feminino e ela chama as seguidoras de "amigona" / "amigonas".
-- Quando o produto agrada principalmente mulheres ou é bom de presente (beleza, bem-estar, decoração, cozinha bonita, organização, conforto), chame a leitora de "amigona" ou "amigonas", de forma natural (no início ou no fim da mensagem).
-- Em produtos neutros (ferramenta, limpeza pesada, eletrônico de casa), o vocativo é opcional.
-- Quando for pedido para falar com o marido, escreva como a Taty falando com os maridos/namorados das seguidoras, sugerindo dar o produto de presente. Exemplo: "Ei, essa é pra você que é o marido da casa: presenteia minha amigona, ela vai amar!!"
+- Quando o produto agrada principalmente mulheres ou é bom de presente (bem-estar, decoração, cozinha bonita, organização, conforto), chame a leitora de "amigona" ou "amigonas", de forma natural (no início, no meio ou no fim).
+- Em produtos neutros (ferramenta, pilha, limpeza pesada, eletrônico), o vocativo é opcional.
+- Recado para o marido (só quando pedido): a Taty fala com os maridos/namorados das seguidoras sugerindo dar o produto de presente para "minha amigona" (sempre no singular). Crie uma frase nova a cada vez. Ideias de tom, NÃO copie: chamar o marido de "maridão" ou "marido da casa", dizer que ela vai adorar / ficar toda feliz / se apaixonar / agradecer, sugerir surpreender, dar a dica de presente.
 - Nunca use linguagem de homem falando, nem termos genéricos como "galera" ou "pessoal".`;
+
+const OPENINGS = [
+  "comece com uma pergunta para a leitora",
+  "comece pelo benefício principal do produto",
+  "comece com uma exclamação curta e um emoji",
+  "comece pelo nome do produto em negrito",
+  "comece pelo preço ou pelo desconto",
+  "comece contando o problema do dia a dia que o produto resolve",
+  "comece com uma frase curta de achado (ex.: tom de quem descobriu algo bom)",
+  "comece chamando a amigona pelo vocativo",
+];
+
+const pick = <T,>(a: T[]) => a[Math.floor(Math.random() * a.length)];
 
 /** Sorteia a variação de cada mensagem (a IA sozinha não garante o "de vez em quando") */
 function voiceVariation(): string {
+  const opening = `Abertura desta mensagem: ${pick(OPENINGS)}.`;
   const r = Math.random();
-  if (r < 0.2)
-    return 'Variação desta mensagem: SE o produto agradar mulheres ou for bom de presente, fale com o MARIDO/namorado ("presenteia minha amigona"). Se não fizer sentido, ignore esta variação.';
-  return r < 0.6 ? 'Variação desta mensagem: se usar vocativo, use "amigona" (singular).' : 'Variação desta mensagem: se usar vocativo, use "amigonas" (plural).';
+  const variation =
+    r < 0.2
+      ? "Variação desta mensagem: SE o produto for um bom presente para uma mulher, inclua um recado curto para o marido/namorado (frase nova, sem copiar exemplos). Se não combinar com presente, NÃO fale de marido."
+      : r < 0.6
+        ? 'Variação desta mensagem: NÃO fale de marido. Se usar vocativo, use "amigona" (singular).'
+        : 'Variação desta mensagem: NÃO fale de marido. Se usar vocativo, use "amigonas" (plural).';
+  return `${opening}\n${variation}`;
 }
 
 const SYSTEM = `Você escreve ofertas para o grupo de WhatsApp "Achadinhos Nosso Lar", do Instagram @nossolar195 (conteúdo de casa e rotina).
@@ -45,8 +63,16 @@ Tarefa: avaliar o produto e escrever a mensagem.
   Mostre o preço como "R$ 00,00". Se houver preço antigo de referência, mostre "de R$ X por R$ Y".
 
 Tons:
-- animado (produtos baratos): energia, emojis (🔥⚡😱), urgência leve. Ex.: "CORRE que tá barato!"
-- curador (produtos mais caros): calmo, confiável, foca em utilidade e qualidade. Ex.: "Avaliamos e vale a pena: ..."
+- animado (produtos baratos): energia, emojis, urgência leve.
+- curador (produtos mais caros): calmo, confiável, foca em utilidade e qualidade.
+
+VARIEDADE (muito importante — as mensagens saem uma atrás da outra no mesmo grupo):
+- Siga a "Abertura desta mensagem" indicada no pedido. NUNCA comece com "Avaliamos e vale a pena".
+- Nunca copie frases de exemplo literalmente; escreva sempre uma frase nova, com outras palavras.
+- Varie verbos e expressões (amar, adorar, ficar toda feliz, se apaixonar, agradecer, não largar mais…).
+
+RECADO PARA O MARIDO: só fale com o marido/namorado quando a linha "Variação desta mensagem" pedir isso
+E o produto combinar com presente. Em qualquer outro caso, não mencione marido.
 
 Responda SOMENTE com JSON: {"score": number, "reason": string, "message": string}
 
