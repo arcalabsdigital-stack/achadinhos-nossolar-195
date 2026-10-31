@@ -58,9 +58,9 @@ Tarefa: avaliar o produto e escrever a mensagem.
 - score: 0 a 10 — quão bem o produto combina com o nicho casa/rotina e se é uma boa oferta. Produtos fora do nicho (roupa, eletrônico pessoal, beleza etc.) recebem no máximo 3.
 - reason: uma frase curta explicando a nota.
 - message: texto da oferta para WhatsApp, em português do Brasil, no máximo 6 linhas curtas.
-  Use *negrito* do WhatsApp no nome curto do produto e no preço.
-  NÃO inclua link (ele é adicionado depois). NÃO invente características que não estão no título.
-  Mostre o preço como "R$ 00,00". Se houver preço antigo de referência, mostre "de R$ X por R$ Y".
+  Use *negrito* do WhatsApp no nome curto do produto.
+  NÃO escreva preço nem valores em R$ no texto: a linha de preço (com o preço antigo riscado) é adicionada
+  automaticamente no final. NÃO inclua link. NÃO invente características que não estão no título.
 
 Tons:
 - animado (produtos baratos): energia, emojis, urgência leve.
@@ -82,15 +82,40 @@ VOZ E ESTILO (siga sempre):
 const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
 /** Texto padrão, usado quando não há chave da Claude configurada */
+/**
+ * Linha de preço padronizada (formato de grupo de ofertas):
+ *   🔥 ~DE R$ 199,00~ | *POR R$ 185,90*
+ * O "~texto~" é o riscado do WhatsApp. Sem preço antigo: 💰 *POR R$ 185,90*
+ */
+export function priceLine(price: number, originalPrice?: number | null) {
+  if (originalPrice && originalPrice > price) {
+    const pct = Math.round(((originalPrice - price) / originalPrice) * 100);
+    return `🔥 ~DE ${brl(originalPrice)}~ | *POR ${brl(price)}*${pct >= 10 ? ` (-${pct}%)` : ""}`;
+  }
+  return `💰 *POR ${brl(price)}*`;
+}
+
+/** Junta o texto da IA (sem preços) com a linha de preço padronizada */
+function withPrice(text: string, price: number, originalPrice?: number | null) {
+  // remove alguma linha de preço que a IA tenha escrito mesmo assim
+  const clean = text
+    .split("\n")
+    .filter((l) => !/R\$\s?\d/.test(l))
+    .join("\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+  return `${clean}\n\n${priceLine(price, originalPrice)}`;
+}
+
+/** Texto padrão, usado quando não há IA configurada ou ela falha */
 export function templateOffer(input: CopyInput & { originalPrice?: number | null }): CopyResult {
   const name = input.title.length > 70 ? input.title.slice(0, 67) + "..." : input.title;
   const amiga = Math.random() < 0.5 ? "amigona" : "amigonas";
-  const old = input.originalPrice && input.originalPrice > input.price ? `de ~${brl(input.originalPrice)}~ ` : "";
-  const message =
+  const body =
     input.tone === "animado"
-      ? `🔥 *${name}*\n\n${old}por *${brl(input.price)}* 😱\n⚡ Corre, ${amiga}, que oferta assim acaba rápido!`
-      : `🏠 *${name}*\n\nAchado que vale a pena pra sua casa, ${amiga}.\n${old}por *${brl(input.price)}*`;
-  return { score: 7, reason: "Texto padrão (sem IA)", message };
+      ? `🔥 *${name}*\n⚡ Corre, ${amiga}, que oferta assim acaba rápido!`
+      : `🏠 *${name}*\nAchado que vale a pena pra sua casa, ${amiga}.`;
+  return { score: 7, reason: "Texto padrão (sem IA)", message: withPrice(body, input.price, input.originalPrice) };
 }
 
 /**
@@ -179,7 +204,11 @@ export async function writeOffer(input: CopyInput & { originalPrice?: number | n
   try {
     const parsed = JSON.parse(text.slice(text.indexOf("{"), text.lastIndexOf("}") + 1)) as CopyResult;
     if (!parsed.message) throw new Error("resposta sem texto");
-    return { score: Number(parsed.score) || 0, reason: String(parsed.reason ?? ""), message: String(parsed.message) };
+    return {
+      score: Number(parsed.score) || 0,
+      reason: String(parsed.reason ?? ""),
+      message: withPrice(String(parsed.message), input.price, input.originalPrice),
+    };
   } catch (e) {
     console.error(`[ia] resposta inválida do ${provider}:`, (e as Error).message);
     return templateOffer(input);
