@@ -1,22 +1,49 @@
 /**
  * Código do botão de favoritos "➕ Achadinhos".
- * Roda no navegador do Marcos, na página da Amazon que ele está vendo, lê nome/preço/foto
- * e abre o formulário do painel já preenchido. Nenhum robô acessa a Amazon.
+ * Roda no navegador do Marcos, na página da loja que ele está vendo (Amazon ou Mercado Livre),
+ * lê nome / preço / preço antigo / foto e abre o formulário do painel já preenchido.
+ * Nenhum robô acessa as lojas.
  */
 export function bookmarkletCode(appUrl: string) {
   const app = JSON.stringify(appUrl.replace(/\/$/, ""));
   const js = `(function(){
 var APP=${app};
-var m=location.pathname.match(/\\/(?:dp|gp\\/product|gp\\/aw\\/d)\\/([A-Z0-9]{10})/i);
-if(!/amazon\\.com\\.br$/.test(location.hostname)||!m){alert('Abra a página de um produto da Amazon.com.br e clique de novo.');return;}
-var core=document.querySelector('#corePriceDisplay_desktop_feature_div,#corePrice_feature_div,#corePrice_desktop,#apex_desktop')||document;
-var p=core.querySelector('.priceToPay .a-offscreen,.a-price:not(.a-text-price) .a-offscreen');
-var o=core.querySelector('.a-price.a-text-price .a-offscreen,.basisPrice .a-offscreen');
-var img=document.querySelector('#landingImage,#imgBlkFront,#main-image');
-var src=img?(img.getAttribute('data-old-hires')||img.getAttribute('src')||''):'';
-var t=document.querySelector('#productTitle');
-var q=function(k,v){return '&'+k+'='+encodeURIComponent((v||'').trim());};
-window.open(APP+'/nova-oferta?via=favorito'+q('link','https://www.amazon.com.br/dp/'+m[1])+q('title',t?t.textContent.slice(0,150):'')+q('price',p?p.textContent:'')+q('originalPrice',o?o.textContent:'')+q('imageUrl',src),'_blank');
+var $=function(s,r){return (r||document).querySelector(s);};
+var $$=function(s,r){return Array.prototype.slice.call((r||document).querySelectorAll(s));};
+var txt=function(e){return e?(e.textContent||'').replace(/\\s+/g,' ').trim():'';};
+var num=function(t){if(!t)return 0;var c=String(t).replace(/[^0-9,.]/g,'');if(!c)return 0;var n=c.indexOf(',')>=0?Number(c.replace(/\\./g,'').replace(',','.')):Number(c);return isFinite(n)?n:0;};
+var meta=function(p){var e=$('meta[property="'+p+'"],meta[name="'+p+'"]');return e?e.getAttribute('content'):'';};
+var h=location.hostname,d={link:'',title:'',price:0,old:0,img:'',site:''};
+
+if(/amazon\\.com\\.br$/.test(h)){
+  var m=location.pathname.match(/\\/(?:dp|gp\\/product|gp\\/aw\\/d)\\/([A-Z0-9]{10})/i);
+  if(!m){alert('Abra a página de um produto da Amazon e clique de novo.');return;}
+  d.site='amazon';d.link='https://www.amazon.com.br/dp/'+m[1];
+  d.title=txt($('#productTitle'));
+  var box=$('#corePriceDisplay_desktop_feature_div')||$('#corePrice_feature_div')||$('#corePrice_desktop')||$('#apex_desktop')||$('#apex_offerDisplay_desktop')||document;
+  var pr=function(el){if(!el)return 0;var o=txt($('.a-offscreen',el));if(num(o))return num(o);var w=txt($('.a-price-whole',el)).replace(/[^0-9]/g,''),f=txt($('.a-price-fraction',el)).replace(/[^0-9]/g,'');return w?Number(w+'.'+(f||'00')):0;};
+  d.price=pr($('.priceToPay',box))||pr($('.apexPriceToPay',box))||pr($('.a-price:not(.a-text-price)',box))||pr($('#priceblock_dealprice'))||pr($('#priceblock_ourprice'));
+  var olds=[$('.basisPrice .a-price',box),$('.a-price.a-text-price[data-a-strike="true"]',box),$('.a-price.a-text-price',box),$('[data-a-strike="true"]'),$('#listPrice'),$('#priceblock_listprice')];
+  for(var i=0;i<olds.length;i++){var v=olds[i]?(pr(olds[i])||num(txt(olds[i]))):0;if(v>d.price&&v<d.price*5){d.old=v;break;}}
+  if(!d.old){$$('span,div',box).some(function(e){var t=txt(e);if(e.children.length<6&&/^(De|Pre\\u00e7o (anterior|original|de tabela))\\s*:/i.test(t)){var v=num(t.replace(/^[^R]*/,''));if(v>d.price&&v<d.price*5){d.old=v;return true;}}return false;});}
+  var im=$('#landingImage')||$('#imgBlkFront')||$('#main-image');
+  d.img=im?(im.getAttribute('data-old-hires')||im.getAttribute('src')||''):meta('og:image');
+}else if(/mercadolivre\\.com\\.br$/.test(h)){
+  d.site='ml';
+  d.title=txt($('h1.ui-pdp-title'))||meta('og:title').replace(/\\s*\\|\\s*Mercado Livre.*$/i,'');
+  var ar=function(re){var v=0;$$('[aria-label]').some(function(e){var a=e.getAttribute('aria-label')||'';var mm=a.match(re);if(mm){v=Number(mm[1].replace(/\\./g,''))+(mm[2]?Number(mm[2])/100:0);return true;}return false;});return v;};
+  d.price=ar(/^Agora:\\s*([\\d.]+)\\s*reais(?:\\s*com\\s*(\\d+)\\s*centavos)?/i)||num(($('meta[itemprop="price"]')||{getAttribute:function(){return '';}}).getAttribute('content'));
+  if(!d.price){var f=$('.ui-pdp-price__second-line .andes-money-amount__fraction');var c=$('.ui-pdp-price__second-line .andes-money-amount__cents');d.price=f?Number(txt(f).replace(/\\./g,'')+'.'+(c?txt(c):'00')):0;}
+  d.old=ar(/^Antes:\\s*([\\d.]+)\\s*reais(?:\\s*com\\s*(\\d+)\\s*centavos)?/i);
+  if(!d.old){var p=$('.andes-money-amount--previous');if(p){var pf=$('.andes-money-amount__fraction',p),pc=$('.andes-money-amount__cents',p);d.old=pf?Number(txt(pf).replace(/\\./g,'')+'.'+(pc?txt(pc):'00')):0;}}
+  if(!(d.old>d.price))d.old=0;
+  var gi=$('.ui-pdp-gallery__figure img')||$('figure img');
+  d.img=(gi&&(gi.getAttribute('data-zoom')||gi.getAttribute('src')))||meta('og:image');
+}else{alert('O bot\\u00e3o funciona em p\\u00e1ginas de produto da Amazon e do Mercado Livre.');return;}
+
+var fmt=function(n){return n?n.toFixed(2).replace('.',','):'';};
+var q=function(k,v){return '&'+k+'='+encodeURIComponent(String(v||'').trim());};
+window.open(APP+'/nova-oferta?via=favorito'+q('site',d.site)+q('link',d.link)+q('title',d.title.slice(0,150))+q('price',fmt(d.price))+q('originalPrice',fmt(d.old))+q('imageUrl',d.img),'_blank');
 })();`;
   return "javascript:" + encodeURIComponent(js.replace(/\n/g, ""));
 }

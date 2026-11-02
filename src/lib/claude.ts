@@ -51,11 +51,17 @@ function voiceVariation(): string {
   return `${opening}\n${variation}`;
 }
 
-const SYSTEM = `Você escreve ofertas para o grupo de WhatsApp "Achadinhos Nosso Lar", do Instagram @nossolar195 (conteúdo de casa e rotina).
-O público quer produtos úteis para casa: cozinha, organização, limpeza e decoração.
+const SYSTEM = `Você escreve ofertas para o grupo de WhatsApp "Achadinhos Nosso Lar", da Taty (Instagram @taty_schneiders / @nossolar195).
+O público é majoritariamente feminino (as "amigonas"). O grupo traz tudo o que a Taty indicaria para uma amiga:
+casa, cozinha, organização, limpeza, decoração, beleza e cuidados pessoais, moda e acessórios femininos, infantil e bebê,
+bem-estar, presentes e tecnologia útil para o dia a dia.
 
 Tarefa: avaliar o produto e escrever a mensagem.
-- score: 0 a 10 — quão bem o produto combina com o nicho casa/rotina e se é uma boa oferta. Produtos fora do nicho (roupa, eletrônico pessoal, beleza etc.) recebem no máximo 3.
+- score: 0 a 10 — quanto o produto interessa a esse público E se é uma boa oferta (desconto, preço acessível, utilidade).
+  Notas altas (8–10): útil ou desejado pelas amigonas, preço atrativo, bom desconto.
+  Notas médias (5–7): interessa, mas é caro, sem desconto claro ou muito específico.
+  Notas baixas (0–4): pouco a ver com esse público (ex.: peça automotiva, ferramenta profissional, item masculino de nicho)
+  ou oferta fraca.
 - reason: uma frase curta explicando a nota.
 - message: texto da oferta para WhatsApp, em português do Brasil, no máximo 6 linhas curtas.
   Use *negrito* do WhatsApp no nome curto do produto.

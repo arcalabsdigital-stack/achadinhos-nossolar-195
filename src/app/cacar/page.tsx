@@ -8,6 +8,7 @@ const LINKS: { title: string; url: string; note: string }[] = [
   { title: "Mais vendidos em Cozinha", url: "https://www.amazon.com.br/gp/bestsellers/kitchen", note: "Utensílios, potes, eletroportáteis" },
   { title: "Em alta em Casa (subindo rápido)", url: "https://www.amazon.com.br/gp/movers-and-shakers/home", note: "Produtos ganhando vendas agora" },
   { title: "Em alta em Cozinha", url: "https://www.amazon.com.br/gp/movers-and-shakers/kitchen", note: "Produtos ganhando vendas agora" },
+  { title: "Mercado Livre — Hub de afiliados (Ganhos extras)", url: "https://www.mercadolivre.com.br/afiliados/hub", note: "Filtre por Ganhos extras + categoria: comissões maiores" },
   { title: "Ofertas da Shopee (painel de afiliado)", url: "https://affiliate.shopee.com.br/offer/product_offer", note: "Gere o link em “Obter link” e cole em ➕ Oferta" },
 ];
 
@@ -29,9 +30,11 @@ export default function Cacar() {
         />
         <div className="title" style={{ marginTop: 12 }}>2. Use</div>
         <p className="muted">
-          Abra a página de um produto na Amazon e clique em <b>➕ Achadinhos</b> na barra de favoritos. O painel abre com nome,
-          preço, preço antigo e foto preenchidos — é só conferir e clicar em <b>Adicionar</b>. A tag de associado é aplicada
-          sozinha.
+          Abra a página de um produto na <b>Amazon</b> ou no <b>Mercado Livre</b> e clique em <b>➕ Achadinhos</b> na barra de
+          favoritos. O painel abre com nome, preço, preço antigo e foto preenchidos. Na Amazon a tag de associado é aplicada
+          sozinha; no Mercado Livre, cole o seu link meli.la no campo Link. Depois é só clicar em <b>Adicionar</b>.
+          <br />
+          (Se você já tinha o botão, arraste de novo para atualizar — a versão nova lê o preço antigo e funciona no Mercado Livre.)
         </p>
       </div>
 

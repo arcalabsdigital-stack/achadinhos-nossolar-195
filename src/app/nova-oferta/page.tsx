@@ -14,12 +14,20 @@ export default async function NovaOferta({ searchParams }: { searchParams: SP })
       <p className="muted">
         Amazon: cole o link de qualquer produto — a tag <b>{amazonTag()}</b> é aplicada sozinha.
         <br />
+        Mercado Livre: cole o link de afiliado (meli.la/…).
+        <br />
         Shopee (enquanto a API não sai): cole o <b>link de afiliado</b> gerado em &quot;Link personalizado&quot;.
       </p>
 
-      {sp.via === "favorito" && !sp.erro && (
+      {sp.via === "favorito" && !sp.erro && sp.site !== "ml" && (
         <p className="notice">
-          Dados lidos da página da Amazon. Confira o nome e o preço e clique em <b>Adicionar ao lote de hoje</b>.
+          Dados lidos da página da Amazon. Confira nome, preço e preço antigo e clique em <b>Adicionar ao lote de hoje</b>.
+        </p>
+      )}
+      {sp.via === "favorito" && !sp.erro && sp.site === "ml" && (
+        <p className="notice">
+          Dados lidos do Mercado Livre. Agora <b>cole o seu link de afiliado</b> (meli.la/… — botão &quot;Compartilhar&quot; da
+          barra de afiliados no topo da página do produto, ou o Gerador de links) no campo Link e clique em Adicionar.
         </p>
       )}
       {sp.erro && <p className="notice">{sp.erro}</p>}
@@ -27,7 +35,7 @@ export default async function NovaOferta({ searchParams }: { searchParams: SP })
       <form className="card" action={addOfferByLink}>
         <div className="field">
           <label>Link do produto *</label>
-          <input name="link" type="url" required defaultValue={sp.link} placeholder="https://amzn.to/... ou https://s.shopee.com.br/..." />
+          <input name="link" type="url" required defaultValue={sp.link} placeholder="https://amzn.to/…, https://meli.la/… ou https://s.shopee.com.br/…" />
         </div>
         <p className="muted">
           Os campos abaixo são opcionais: o sistema tenta ler da página. Se não conseguir, ele pede para você preencher.

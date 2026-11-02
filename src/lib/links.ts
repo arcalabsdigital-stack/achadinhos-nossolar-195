@@ -109,9 +109,27 @@ export async function fetchMeta(url: string): Promise<PageMeta> {
       html.match(/data-old-hires=["']([^"']+)["']/i)?.[1] ??
       html.match(/id=["']landingImage["'][^>]+src=["']([^"']+)["']/i)?.[1] ??
       meta("og:image");
+    // Mercado Livre: preços em aria-label ("Agora: 177 reais com 50 centavos" / "Antes: 299 reais")
+    const ml = (label: string) => {
+      const m = html.match(new RegExp(`aria-label=["']${label}:\\s*([\\d.]+)\\s*reais(?:\\s*com\\s*(\\d+)\\s*centavos)?`, "i"));
+      return m ? Number(m[1].replace(/\./g, "")) + (m[2] ? Number(m[2]) / 100 : 0) : undefined;
+    };
+    const mlPrice = ml("Agora");
+    const mlOld = ml("Antes");
+    if (mlPrice) {
+      const t = html.match(/class=["'][^"']*ui-pdp-title[^"']*["'][^>]*>([^<]+)</i)?.[1] ?? meta("og:title");
+      return {
+        title: t ? decode(t).replace(/\s*\|\s*Mercado Livre.*$/i, "") : undefined,
+        imageUrl: meta("og:image") ? decode(meta("og:image")!) : undefined,
+        price: mlPrice,
+        originalPrice: mlOld && mlOld > mlPrice ? mlOld : undefined,
+      };
+    }
     const offscreen = [...html.matchAll(/class=["']a-offscreen["'][^>]*>\s*([^<]+)</gi)].map((m) => parseBRL(m[1]));
     const price = offscreen.find(Boolean) ?? parseBRL(meta("product:price:amount") ?? meta("og:price:amount"));
-    const strike = html.match(/class=["']a-price a-text-price["'][\s\S]*?a-offscreen["'][^>]*>\s*([^<]+)</i)?.[1];
+    const strike =
+      html.match(/data-a-strike=["']true["'][\s\S]{0,200}?a-offscreen["'][^>]*>\s*([^<]+)</i)?.[1] ??
+      html.match(/class=["']a-price a-text-price["'][\s\S]*?a-offscreen["'][^>]*>\s*([^<]+)</i)?.[1];
     const originalPrice = parseBRL(strike);
 
     return {
