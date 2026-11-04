@@ -51,15 +51,18 @@ export async function addOfferByLink(fd: FormData) {
     } else {
       // Link curto da SiteStripe (link.amazon / amzn.to) que não deu para abrir:
       // ele já vem com a tag de Associado, então é usado como está.
-      externalId = hashId(raw);
+      externalId = hashId(raw, true);
       affiliateLink = raw;
-      productUrl = finalUrl;
+      productUrl = raw;
     }
   } else {
-    // Shopee sem API ou outra loja: o link colado já deve ser o link de afiliado
-    externalId = hashId(finalUrl);
+    // Mercado Livre / Shopee sem API / outra loja: o link colado já é o link de afiliado.
+    // Atenção: o meli.la redireciona para a vitrine do afiliado (/social/...), que é igual
+    // para todos os produtos — então o ID vem do código do anúncio (MLB...) ou do próprio link curto.
+    const mlb = (finalUrl.match(/MLB-?(\d{6,})/i) ?? raw.match(/MLB-?(\d{6,})/i))?.[1];
+    externalId = mlb ? `MLB${mlb}` : hashId(raw, true);
     affiliateLink = raw;
-    productUrl = finalUrl;
+    productUrl = raw;
   }
 
   let title = field(fd, "title");

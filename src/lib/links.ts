@@ -61,8 +61,9 @@ export function amazonAffiliateLink(asin: string) {
   return `https://www.amazon.com.br/dp/${asin}?tag=${amazonTag()}`;
 }
 
-export function hashId(url: string) {
-  return crypto.createHash("sha1").update(url.split("?")[0]).digest("hex").slice(0, 16);
+/** ID estável a partir de um link. `full` = considera o link inteiro (inclusive ?parâmetros) */
+export function hashId(url: string, full = false) {
+  return crypto.createHash("sha1").update(full ? url.trim() : url.split("?")[0]).digest("hex").slice(0, 16);
 }
 
 export type PageMeta = { title?: string; price?: number; originalPrice?: number; imageUrl?: string };
