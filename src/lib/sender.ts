@@ -2,6 +2,7 @@ import { prisma } from "./db";
 import { getProduct } from "./shopee";
 import { sendImage, sendText, fetchGroups } from "./evolution";
 import { finalMessage } from "./message";
+import { buildOfferCard, hiResImageUrl } from "./card";
 
 const PRICE_TOLERANCE = 1.05; // aceita até 5% de alta antes de cancelar
 const MAX_DELAY_MS = 2 * 3600_000; // slot perdido há mais de 2h é descartado
@@ -43,6 +44,17 @@ export async function processDueOffers(log: (m: string) => void = console.log) {
     }
 
     const text = finalMessage(offer.message, offer.id, offer.product.source, offer.affiliateLink);
+
+    // imagem montada uma vez por oferta (quadrada, alta resolução, selo de desconto)
+    let media: string | null = null;
+    if (offer.product.imageUrl) {
+      try {
+        media = (await buildOfferCard(offer.product.imageUrl, offer.realDiscountPct)).toString("base64");
+      } catch (e) {
+        log(`[envio] não deu para montar a imagem (${(e as Error).message}) — usando a foto original`);
+        media = hiResImageUrl(offer.product.imageUrl);
+      }
+    }
     for (const g of groups) {
       const send = await prisma.send.upsert({
         where: { offerId_groupId: { offerId: offer.id, groupId: g.id } },
@@ -52,7 +64,7 @@ export async function processDueOffers(log: (m: string) => void = console.log) {
       if (send.status === "sent") continue;
       try {
         if (live) {
-          if (offer.product.imageUrl) await sendImage(g.jid!, offer.product.imageUrl, text);
+          if (media) await sendImage(g.jid!, media, text);
           else await sendText(g.jid!, text);
         } else {
           log(`[simulação] ${g.name}:\n${text}`);

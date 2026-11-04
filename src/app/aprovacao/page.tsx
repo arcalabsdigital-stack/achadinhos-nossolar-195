@@ -107,6 +107,14 @@ export default async function Aprovacao() {
               <a className="muted" href={o.product.productUrl} target="_blank">
                 ver na loja ↗
               </a>
+              {o.product.imageUrl && (
+                <>
+                  {" · "}
+                  <a className="muted" href={`/card/${o.id}`} target="_blank">
+                    ver imagem do WhatsApp ↗
+                  </a>
+                </>
+              )}
             </div>
           ))}
 

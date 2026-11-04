@@ -31,13 +31,15 @@ export async function sendText(jid: string, text: string) {
   return call("POST", `/message/sendText/${instance}`, { number: jid, text });
 }
 
-export async function sendImage(jid: string, imageUrl: string, caption: string) {
+/** Envia imagem com legenda. `media` pode ser uma URL ou o JPEG em base64 (sem prefixo data:) */
+export async function sendImage(jid: string, media: string, caption: string) {
   const { instance } = cfg();
   return call("POST", `/message/sendMedia/${instance}`, {
     number: jid,
     mediatype: "image",
     mimetype: "image/jpeg",
-    media: imageUrl,
+    fileName: "oferta.jpg",
+    media,
     caption,
   });
 }
