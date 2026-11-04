@@ -43,7 +43,14 @@ if(/amazon\\.com\\.br$/.test(h)){
 
 var fmt=function(n){return n?n.toFixed(2).replace('.',','):'';};
 var q=function(k,v){return '&'+k+'='+encodeURIComponent(String(v||'').trim());};
-window.open(APP+'/nova-oferta?via=favorito'+q('site',d.site)+q('link',d.link)+q('title',d.title.slice(0,150))+q('price',fmt(d.price))+q('originalPrice',fmt(d.old))+q('imageUrl',d.img),'_blank');
+var send=function(){var u=APP+'/nova-oferta?via=favorito'+q('site',d.site)+q('link',d.link)+q('title',d.title.slice(0,150))+q('price',fmt(d.price))+q('originalPrice',fmt(d.old))+q('imageUrl',d.img);var w=window.open(u,'_blank');if(!w)location.href=u;};
+if(d.site!=='ml'){send();return;}
+var findMeli=function(){var v='';$$('input,textarea').some(function(e){var m=String(e.value||'').match(/https:\\/\\/meli\\.la\\/[A-Za-z0-9]+/);if(m){v=m[0];return true;}return false;});return v;};
+d.link=findMeli();
+if(d.link){send();return;}
+var btn=null;$$('button,a').some(function(e){if(/^\\s*Compartilhar\\s*$/i.test(e.textContent||'')&&e.getBoundingClientRect().top<160){btn=e;return true;}return false;});
+if(btn)btn.click();
+var tries=0,iv=setInterval(function(){tries++;d.link=findMeli();if(d.link||tries>25){clearInterval(iv);var esc=document.querySelector('[aria-label="Fechar"],.andes-modal__close-button');if(d.link&&esc)try{esc.click();}catch(e){}send();}},200);
 })();`;
   return "javascript:" + encodeURIComponent(js.replace(/\n/g, ""));
 }

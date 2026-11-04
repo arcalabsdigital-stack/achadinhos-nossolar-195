@@ -24,7 +24,12 @@ export default async function NovaOferta({ searchParams }: { searchParams: SP })
           Dados lidos da página da Amazon. Confira nome, preço e preço antigo e clique em <b>Adicionar ao lote de hoje</b>.
         </p>
       )}
-      {sp.via === "favorito" && !sp.erro && sp.site === "ml" && (
+      {sp.via === "favorito" && !sp.erro && sp.site === "ml" && sp.link && (
+        <p className="notice">
+          Dados e link de afiliado (meli.la) lidos do Mercado Livre. Confira e clique em <b>Adicionar ao lote de hoje</b>.
+        </p>
+      )}
+      {sp.via === "favorito" && !sp.erro && sp.site === "ml" && !sp.link && (
         <p className="notice">
           Dados lidos do Mercado Livre. Agora <b>cole o seu link de afiliado</b> (meli.la/… — botão &quot;Compartilhar&quot; da
           barra de afiliados no topo da página do produto, ou o Gerador de links) no campo Link e clique em Adicionar.
