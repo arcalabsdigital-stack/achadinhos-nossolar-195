@@ -45,12 +45,15 @@ var fmt=function(n){return n?n.toFixed(2).replace('.',','):'';};
 var q=function(k,v){return '&'+k+'='+encodeURIComponent(String(v||'').trim());};
 var send=function(){var u=APP+'/nova-oferta?via=favorito'+q('site',d.site)+q('link',d.link)+q('title',d.title.slice(0,150))+q('price',fmt(d.price))+q('originalPrice',fmt(d.old))+q('imageUrl',d.img);var w=window.open(u,'_blank');if(!w)location.href=u;};
 if(d.site!=='ml'){send();return;}
-var findMeli=function(){var v='';$$('input,textarea').some(function(e){var m=String(e.value||'').match(/https:\\/\\/meli\\.la\\/[A-Za-z0-9]+/);if(m){v=m[0];return true;}return false;});return v;};
+var roots=function(){var out=[document],i=0;while(i<out.length){var r=out[i++];var all=r.querySelectorAll?r.querySelectorAll('*'):[];for(var k=0;k<all.length;k++){var e=all[k];if(e.shadowRoot)out.push(e.shadowRoot);if(e.tagName==='IFRAME'){try{if(e.contentDocument)out.push(e.contentDocument);}catch(x){}}}}return out;};
+var deep=function(sel){var res=[];roots().forEach(function(r){Array.prototype.push.apply(res,Array.prototype.slice.call(r.querySelectorAll(sel)));});return res;};
+var RE=/https:\\/\\/meli\\.la\\/[A-Za-z0-9]+/;
+var findMeli=function(){var v='';deep('input,textarea').some(function(e){var m=String(e.value||'').match(RE);if(m){v=m[0];return true;}return false;});if(!v){deep('a[href*="meli.la"],span,p,div').some(function(e){if(e.children&&e.children.length>3)return false;var m=String(e.getAttribute&&e.getAttribute('href')||e.textContent||'').match(RE);if(m){v=m[0];return true;}return false;});}return v;};
 d.link=findMeli();
 if(d.link){send();return;}
-var btn=null;$$('button,a').some(function(e){if(/^\\s*Compartilhar\\s*$/i.test(e.textContent||'')&&e.getBoundingClientRect().top<160){btn=e;return true;}return false;});
+var btn=null;deep('button,a,[role="button"]').some(function(e){if(/^\\s*Compartilhar\\s*$/i.test(e.textContent||'')&&e.getBoundingClientRect().top<200){btn=e;return true;}return false;});
 if(btn)btn.click();
-var tries=0,iv=setInterval(function(){tries++;d.link=findMeli();if(d.link||tries>25){clearInterval(iv);var esc=document.querySelector('[aria-label="Fechar"],.andes-modal__close-button');if(d.link&&esc)try{esc.click();}catch(e){}send();}},200);
+var tries=0,iv=setInterval(function(){tries++;d.link=findMeli();if(d.link||tries>30){clearInterval(iv);var esc=deep('[aria-label="Fechar"],.andes-modal__close-button')[0];if(d.link&&esc)try{esc.click();}catch(e){}send();}},200);
 })();`;
   return "javascript:" + encodeURIComponent(js.replace(/\n/g, ""));
 }
