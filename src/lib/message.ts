@@ -18,12 +18,9 @@ export async function offerLink(offer: { id: string; code: string | null }) {
   let code = offer.code;
   for (let i = 0; !code && i < 5; i++) {
     const c = randomCode();
-    try {
-      await prisma.offer.update({ where: { id: offer.id }, data: { code: c } });
-      code = c;
-    } catch {
-      /* colisão: tenta outro */
-    }
+    if (await prisma.offer.findFirst({ where: { code: c }, select: { id: true } })) continue; // colisão: tenta outro
+    await prisma.offer.update({ where: { id: offer.id }, data: { code: c } });
+    code = c;
   }
   return `${base()}/o/${code ?? offer.id}`;
 }

@@ -62,7 +62,7 @@ enum Tone {
 /// Oferta candidata (uma por produto por dia de coleta)
 model Offer {
   id              String      @id @default(cuid())
-  code            String?     @unique // código curto do link /o/<code>
+  code            String?     // código curto do link /o/<code> (unicidade checada no código)
   productId       String
   product         Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
   batchDate       DateTime    @db.Date
