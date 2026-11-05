@@ -40,13 +40,16 @@ export function refreshPriceLine(message: string, price: number, originalPrice: 
 /**
  * Amazon: o link vai direto para a Amazon (as regras do programa de Associados
  * não permitem esconder o destino atrás de redirecionador próprio).
- * Shopee/manual: link curto rastreável /o/<code>.
+ * Links curtos da loja (meli.la, s.shopee.com.br) também vão direto; longos usam /o/<code>.
  */
 export async function finalMessage(
   offer: { id: string; code: string | null; message: string; affiliateLink: string; price: unknown; originalPrice: unknown },
   source: string,
 ) {
-  const link = source === "amazon" ? offer.affiliateLink : await offerLink(offer);
+  // Amazon, e links curtos da própria loja (meli.la, s.shopee.com.br…) vão direto, como no Economi-Z.
+  // Só links longos passam pelo nosso /o/<código>.
+  const direct = source === "amazon" || offer.affiliateLink.length <= 40;
+  const link = direct ? offer.affiliateLink : await offerLink(offer);
   const op = offer.originalPrice == null ? null : Number(offer.originalPrice);
   const text = refreshPriceLine(offer.message, Number(offer.price), op);
   return `${text}\n\n👉 ${link}`;
