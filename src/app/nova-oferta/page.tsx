@@ -16,10 +16,15 @@ export default async function NovaOferta({ searchParams }: { searchParams: SP })
         <br />
         Mercado Livre: cole o link de afiliado (meli.la/…).
         <br />
-        Shopee (enquanto a API não sai): cole o <b>link de afiliado</b> gerado em &quot;Link personalizado&quot;.
+        Shopee: cole o link de qualquer produto — o link de afiliado é gerado sozinho pela API.
       </p>
 
-      {sp.via === "favorito" && !sp.erro && sp.site !== "ml" && (
+      {sp.via === "favorito" && !sp.erro && sp.site === "shopee" && (
+        <p className="notice">
+          Produto da Shopee identificado. Nome, preço, foto e o seu link de afiliado vêm da API ao clicar em <b>Adicionar ao lote de hoje</b>.
+        </p>
+      )}
+      {sp.via === "favorito" && !sp.erro && sp.site === "amazon" && (
         <p className="notice">
           Dados lidos da página da Amazon. Confira nome, preço e preço antigo e clique em <b>Adicionar ao lote de hoje</b>.
         </p>
@@ -62,6 +67,11 @@ export default async function NovaOferta({ searchParams }: { searchParams: SP })
         <div className="field">
           <label>Link da imagem</label>
           <input name="imageUrl" defaultValue={sp.imageUrl} placeholder="https://..." />
+        </div>
+        <div className="field">
+          <label>Cupom (opcional)</label>
+          <input name="coupon" defaultValue={sp.coupon} placeholder="Ex.: OFERTAMELI ou Cupom 10% OFF" />
+          {sp.via === "favorito" && sp.coupon && <p className="muted">🎟️ Cupom encontrado na página — confira se vale para este produto.</p>}
         </div>
         <div className="field">
           <label>Texto próprio (deixe vazio para gerar automaticamente)</label>

@@ -68,6 +68,7 @@ model Offer {
   batchDate       DateTime    @db.Date
   price           Decimal     @db.Decimal(10, 2)
   originalPrice   Decimal?    @db.Decimal(10, 2)
+  coupon          String?     // cupom visto na página do produto (ou post de cupom)
   lowest30d       Decimal?    @db.Decimal(10, 2)
   realDiscountPct Float?
   commissionRate  Float?

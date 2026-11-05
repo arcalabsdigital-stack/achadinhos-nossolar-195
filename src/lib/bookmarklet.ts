@@ -1,7 +1,7 @@
 /**
  * Código do botão de favoritos "➕ Achadinhos".
- * Roda no navegador do Marcos, na página da loja que ele está vendo (Amazon ou Mercado Livre),
- * lê nome / preço / preço antigo / foto e abre o formulário do painel já preenchido.
+ * Roda no navegador do Marcos, na página da loja que ele está vendo (Amazon, Mercado Livre ou Shopee),
+ * lê nome / preço / preço antigo / foto / cupom e abre o formulário do painel já preenchido.
  * Nenhum robô acessa as lojas.
  */
 export function bookmarkletCode(appUrl: string) {
@@ -13,7 +13,8 @@ var $$=function(s,r){return Array.prototype.slice.call((r||document).querySelect
 var txt=function(e){return e?(e.textContent||'').replace(/\\s+/g,' ').trim():'';};
 var num=function(t){if(!t)return 0;var c=String(t).replace(/[^0-9,.]/g,'');if(!c)return 0;var n=c.indexOf(',')>=0?Number(c.replace(/\\./g,'').replace(',','.')):Number(c);return isFinite(n)?n:0;};
 var meta=function(p){var e=$('meta[property="'+p+'"],meta[name="'+p+'"]');return e?e.getAttribute('content'):'';};
-var h=location.hostname,d={link:'',title:'',price:0,old:0,img:'',site:''};
+var h=location.hostname,d={link:'',title:'',price:0,old:0,img:'',site:'',coupon:''};
+var findCoupon=function(){var best='';$$('span,div,label,p,button,a,li').forEach(function(e){if(e.children.length>4)return;var r=e.getBoundingClientRect();if(!r.width||!r.height)return;var t=txt(e);if(t.length<4||t.length>70)return;if(!/cupo(m|ns)|voucher/i.test(t))return;if(!/(\\d{1,2}\\s?%|R\\$\\s?\\d)/.test(t))return;if(!best||t.length<best.length)best=t;});return best;};
 
 if(/amazon\\.com\\.br$/.test(h)){
   var m=location.pathname.match(/\\/(?:dp|gp\\/product|gp\\/aw\\/d)\\/([A-Z0-9]{10})/i);
@@ -39,11 +40,18 @@ if(/amazon\\.com\\.br$/.test(h)){
   if(!(d.old>d.price))d.old=0;
   var gi=$('.ui-pdp-gallery__figure img')||$('figure img');
   d.img=(gi&&(gi.getAttribute('data-zoom')||gi.getAttribute('src')))||meta('og:image');
-}else{alert('O bot\\u00e3o funciona em p\\u00e1ginas de produto da Amazon e do Mercado Livre.');return;}
+}else if(/shopee\\.com\\.br$/.test(h)){
+  var si=location.pathname.match(/-i\\.(\\d+)\\.(\\d+)/)||location.pathname.match(/\\/product\\/(\\d+)\\/(\\d+)/);
+  if(!si){alert('Abra a p\\u00e1gina de um produto da Shopee e clique de novo.');return;}
+  d.site='shopee';d.link='https://shopee.com.br/product/'+si[1]+'/'+si[2];
+  d.title=meta('og:title').replace(/\\s*\\|\\s*Shopee.*$/i,'');
+  d.img=meta('og:image');
+}else{alert('O bot\\u00e3o funciona em p\\u00e1ginas de produto da Amazon, Mercado Livre e Shopee.');return;}
+d.coupon=findCoupon();
 
 var fmt=function(n){return n?n.toFixed(2).replace('.',','):'';};
 var q=function(k,v){return '&'+k+'='+encodeURIComponent(String(v||'').trim());};
-var send=function(){var u=APP+'/nova-oferta?via=favorito'+q('site',d.site)+q('link',d.link)+q('title',d.title.slice(0,150))+q('price',fmt(d.price))+q('originalPrice',fmt(d.old))+q('imageUrl',d.img);var w=window.open(u,'_blank');if(!w)location.href=u;};
+var send=function(){var u=APP+'/nova-oferta?via=favorito'+q('site',d.site)+q('link',d.link)+q('title',d.title.slice(0,150))+q('price',fmt(d.price))+q('originalPrice',fmt(d.old))+q('imageUrl',d.img)+q('coupon',d.coupon);var w=window.open(u,'_blank');if(!w)location.href=u;};
 if(d.site!=='ml'){send();return;}
 var roots=function(){var out=[document],i=0;while(i<out.length){var r=out[i++];var all=r.querySelectorAll?r.querySelectorAll('*'):[];for(var k=0;k<all.length;k++){var e=all[k];if(e.shadowRoot)out.push(e.shadowRoot);if(e.tagName==='IFRAME'){try{if(e.contentDocument)out.push(e.contentDocument);}catch(x){}}}}return out;};
 var deep=function(sel){var res=[];roots().forEach(function(r){Array.prototype.push.apply(res,Array.prototype.slice.call(r.querySelectorAll(sel)));});return res;};

@@ -25,8 +25,17 @@ export async function offerLink(offer: { id: string; code: string | null }) {
   return `${base()}/o/${code ?? offer.id}`;
 }
 
+/** Linha do cupom: código (ex. OFERTAMELI) ou descrição lida na página (ex. "Cupom 10% OFF") */
+export function couponLine(coupon: string) {
+  const c = coupon.trim();
+  if (/^[A-Z0-9]{4,20}$/.test(c)) return `🎟️ Use o cupom *${c}*`;
+  const desc = c.replace(/\s+/g, " ").replace(/^(aplicar|ativar|economize|ganhe)\s+/i, "");
+  return `🎟️ *Tem cupom:* ${desc} (ative na página antes de pagar)`;
+}
+
 /** Troca a linha de preço do texto pela versão padrão (com preço antigo riscado, se houver) */
 export function refreshPriceLine(message: string, price: number, originalPrice: number | null) {
+  if (!originalPrice || !price) return message.trim(); // sem preço antigo salvo: mantém a linha do texto
   const line = priceLine(price, originalPrice);
   const lines = message.trim().split("\n");
   const i = lines.findLastIndex((l) => /POR\s*R\$/.test(l));

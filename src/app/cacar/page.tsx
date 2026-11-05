@@ -30,11 +30,11 @@ export default function Cacar() {
         />
         <div className="title" style={{ marginTop: 12 }}>2. Use</div>
         <p className="muted">
-          Abra a página de um produto na <b>Amazon</b> ou no <b>Mercado Livre</b> e clique em <b>➕ Achadinhos</b> na barra de
+          Abra a página de um produto na <b>Amazon</b>, no <b>Mercado Livre</b> ou na <b>Shopee</b> e clique em <b>➕ Achadinhos</b> na barra de
           favoritos. O painel abre com nome, preço, preço antigo e foto preenchidos. Na Amazon a tag de associado é aplicada
           sozinha; no Mercado Livre, cole o seu link meli.la no campo Link. Depois é só clicar em <b>Adicionar</b>.
           <br />
-          (Se você já tinha o botão, arraste de novo para atualizar — a versão nova lê o preço antigo e funciona no Mercado Livre.)
+          (Se você já tinha o botão, arraste de novo para atualizar — a versão nova também funciona na Shopee e pega o cupom da página.)
         </p>
       </div>
 

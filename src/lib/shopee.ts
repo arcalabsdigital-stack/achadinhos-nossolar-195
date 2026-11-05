@@ -86,6 +86,25 @@ export async function searchProducts(keyword: string, opts: { limit?: number; pa
   return data.productOfferV2.nodes.map(parse);
 }
 
+/** Gera o link curto oficial de afiliado (s.shopee.com.br/…) para qualquer URL da Shopee */
+export async function shortLink(originUrl: string): Promise<string> {
+  const data = await gql<{ generateShortLink: { shortLink: string } }>(
+    `mutation { generateShortLink(input: { originUrl: ${JSON.stringify(originUrl)}, subIds: ["grupo"] }) { shortLink } }`,
+  );
+  return data.generateShortLink.shortLink;
+}
+
+/** shopId e itemId a partir da URL de produto da Shopee */
+export function shopeeIds(url: string): { shopId: string; itemId: string } | null {
+  const m = url.match(/-i\.(\d+)\.(\d+)/) ?? url.match(/\/product\/(\d+)\/(\d+)/);
+  return m ? { shopId: m[1], itemId: m[2] } : null;
+}
+
+/** Preço antigo a partir do % de desconto informado pela Shopee */
+export function shopeeOriginalPrice(price: number, rate: number | null) {
+  return rate && rate >= 5 && rate < 95 ? Math.round((price / (1 - rate / 100)) * 100) / 100 : null;
+}
+
 /** Consulta um item específico (usado para reverificar o preço antes do envio) */
 export async function getProduct(shopId: string, itemId: string): Promise<ShopeeProduct | null> {
   if (!/^\d+$/.test(shopId) || !/^\d+$/.test(itemId)) throw new Error("shopId/itemId inválidos");

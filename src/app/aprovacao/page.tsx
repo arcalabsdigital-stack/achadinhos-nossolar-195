@@ -85,7 +85,8 @@ export default async function Aprovacao({ searchParams }: { searchParams: Promis
                   <div className="title">{o.product.title}</div>
                   <div className="chips">
                     <span className="chip">{({ amazon: "Amazon", shopee: "Shopee", manual: "Link" } as Record<string, string>)[o.product.source]}</span>
-                    <span className="chip ok">{brl(o.price)}</span>
+                    {o.product.category === "cupom" ? <span className="chip ok">🎟️ cupom</span> : <span className="chip ok">{brl(o.price)}</span>}
+                    {o.coupon && o.product.category !== "cupom" ? <span className="chip ok">🎟️ {o.coupon}</span> : null}
                     {o.realDiscountPct ? <span className="chip ok">-{Math.round(o.realDiscountPct)}%</span> : null}
                     {o.lowest30d ? <span className="chip">mín. 30d {brl(o.lowest30d)}</span> : null}
                     <span className="chip warn">nota {o.score?.toFixed(1)}</span>
