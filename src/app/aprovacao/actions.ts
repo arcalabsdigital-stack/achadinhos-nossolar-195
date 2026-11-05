@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { batchDateValue } from "@/lib/time";
 import { fillQueue } from "@/lib/queue";
@@ -47,6 +48,16 @@ export async function unschedule(formData: FormData) {
 }
 
 export async function runCollectNow() {
-  await collect();
+  let msg: string;
+  try {
+    const r = await collect();
+    if (r.note) msg = `⚠️ ${r.note}`;
+    else if (r.created) msg = `✅ ${r.created} oferta(s) da Shopee geradas (${r.seen} produtos analisados).`;
+    else if (r.errors.length) msg = `❌ Erro na Shopee: ${r.errors[0]}`;
+    else msg = `ℹ️ ${r.seen} produtos analisados, ${r.candidates} passaram nos filtros, nenhuma oferta nova. Afrouxe os filtros em Configurações (desconto mínimo, nota mínima) ou troque as palavras-chave.`;
+  } catch (e) {
+    msg = `❌ ${(e as Error).message}`;
+  }
   revalidatePath("/aprovacao");
+  redirect(`/aprovacao?coleta=${encodeURIComponent(msg.slice(0, 400))}`);
 }

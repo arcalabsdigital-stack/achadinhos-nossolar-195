@@ -42,16 +42,24 @@ async function upsertProduct(p: ShopeeProduct, category: string) {
   return product.id;
 }
 
-export async function collect(log: (m: string) => void = console.log) {
+export type CollectReport = { created: number; seen: number; candidates: number; errors: string[]; note?: string };
+
+export async function collect(log: (m: string) => void = console.log): Promise<CollectReport> {
+  const report: CollectReport = { created: 0, seen: 0, candidates: 0, errors: [] };
   if (!process.env.SHOPEE_APP_ID || !process.env.SHOPEE_APP_SECRET) {
     log("[coletor] credenciais da Shopee ainda não configuradas — coleta automática pulada");
-    return 0;
+    report.note = "Credenciais da Shopee não configuradas no Railway.";
+    return report;
   }
   const s = await getSettings();
   const day = todaySP();
   const batchDate = batchDateValue(day);
   const blocked = s.blockedWords.map((w) => w.toLowerCase());
   const cooldown = new Date(Date.now() - RESEND_COOLDOWN_DAYS * 24 * 3600_000);
+  if (!s.keywords.length) {
+    report.note = "Nenhuma palavra-chave em Configurações.";
+    return report;
+  }
 
   const seen = new Set<string>();
   const candidates: Candidate[] = [];
@@ -62,6 +70,7 @@ export async function collect(log: (m: string) => void = console.log) {
       products = await searchProducts(kw, { limit: 30, sortType: 2 });
     } catch (e) {
       log(`[coletor] erro em "${kw}": ${(e as Error).message}`);
+      report.errors.push(`${kw}: ${(e as Error).message}`);
       continue;
     }
     for (const p of products) {
@@ -128,8 +137,9 @@ export async function collect(log: (m: string) => void = console.log) {
       created++;
     } catch (e) {
       log(`[coletor] falha ao gerar texto: ${(e as Error).message}`);
+      report.errors.push(`texto: ${(e as Error).message}`);
     }
   }
   log(`[coletor] lote de ${day}: ${created} ofertas pendentes`);
-  return created;
+  return { ...report, created, seen: seen.size, candidates: candidates.length };
 }

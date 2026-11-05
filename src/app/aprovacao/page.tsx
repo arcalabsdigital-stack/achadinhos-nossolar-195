@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db";
 import AutoRefresh from "@/components/AutoRefresh";
+import SubmitButton from "@/components/SubmitButton";
 import { batchDateValue, hhmmSP, slotToDate, todaySP } from "@/lib/time";
 import { approveSelected, rejectOne, rejectRemaining, runCollectNow, unschedule } from "./actions";
 
@@ -14,7 +15,9 @@ const STATUS: Record<string, string> = {
   approved: "⏳ na fila (sem horário livre)",
 };
 
-export default async function Aprovacao() {
+export default async function Aprovacao({ searchParams }: { searchParams: Promise<{ coleta?: string }> }) {
+  const { coleta } = await searchParams;
+  const shopeeOn = Boolean(process.env.SHOPEE_APP_ID && process.env.SHOPEE_APP_SECRET);
   const day = todaySP();
   const batchDate = batchDateValue(day);
   const [pending, agenda] = await Promise.all([
@@ -47,6 +50,7 @@ export default async function Aprovacao() {
       <p className="muted">
         {day.split("-").reverse().join("/")} · {pending.length} pendente(s) · marque as que vão para o grupo
       </p>
+      {coleta && <div className="card"><p>{coleta}</p></div>}
 
       {pending.length === 0 && (
         <div className="card">
@@ -56,10 +60,12 @@ export default async function Aprovacao() {
               <button type="button" className="primary">➕ Adicionar por link</button>
             </a>
             <form action={runCollectNow}>
-              <button>🔄 Gerar lote da Shopee</button>
+              <SubmitButton pendingText="⏳ Buscando na Shopee… (até 2 min)">🔄 Gerar lote da Shopee</SubmitButton>
             </form>
           </div>
-          <p className="muted">O lote automático da Shopee depende da liberação da API.</p>
+          <p className="muted">
+            {shopeeOn ? "API da Shopee conectada · lote automático todo dia às 05:30." : "O lote automático da Shopee depende da liberação da API."}
+          </p>
         </div>
       )}
 
