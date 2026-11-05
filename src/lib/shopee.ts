@@ -20,8 +20,9 @@ export type ShopeeProduct = {
 };
 
 function creds() {
-  const appId = process.env.SHOPEE_APP_ID;
-  const secret = process.env.SHOPEE_APP_SECRET;
+  // trim: espaços/quebras de linha coladas junto no Railway invalidam a assinatura
+  const appId = process.env.SHOPEE_APP_ID?.trim().replace(/^["']|["']$/g, "");
+  const secret = process.env.SHOPEE_APP_SECRET?.trim().replace(/^["']|["']$/g, "");
   if (!appId || !secret) throw new Error("SHOPEE_APP_ID / SHOPEE_APP_SECRET não configurados");
   return { appId, secret };
 }

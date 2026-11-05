@@ -71,6 +71,7 @@ export async function collect(log: (m: string) => void = console.log): Promise<C
     } catch (e) {
       log(`[coletor] erro em "${kw}": ${(e as Error).message}`);
       report.errors.push(`${kw}: ${(e as Error).message}`);
+      if (/signature|credential|auth/i.test((e as Error).message)) break; // erro de credencial: não adianta tentar as outras palavras
       continue;
     }
     for (const p of products) {
