@@ -1,4 +1,4 @@
-import { bookmarkletCode } from "@/lib/bookmarklet";
+import { bookmarkletCode, couponBookmarkletCode } from "@/lib/bookmarklet";
 
 export const dynamic = "force-dynamic";
 
@@ -14,6 +14,7 @@ const LINKS: { title: string; url: string; note: string }[] = [
 
 export default function Cacar() {
   const href = bookmarkletCode(process.env.APP_URL ?? "");
+  const couponHref = couponBookmarkletCode(process.env.APP_URL ?? "");
   return (
     <>
       <h1>Caçar ofertas</h1>
@@ -35,6 +36,24 @@ export default function Cacar() {
           sozinha; no Mercado Livre, cole o seu link meli.la no campo Link. Depois é só clicar em <b>Adicionar</b>.
           <br />
           (Se você já tinha o botão, arraste de novo para atualizar — a versão nova também funciona na Shopee e pega o cupom da página.)
+        </p>
+      </div>
+
+      <div className="card">
+        <div className="title">🎟️ Botão de cupons</div>
+        <p className="muted">
+          Arraste também este botão para a barra de favoritos. Use na <b>página de cupons</b> da loja: ele mostra a lista de
+          cupons encontrados, você escolhe um e o formulário de cupom abre preenchido.
+        </p>
+        <p
+          dangerouslySetInnerHTML={{
+            __html: `<a href="${couponHref}" style="display:inline-block;padding:10px 16px;border-radius:10px;background:#c77d12;color:#fff;font-weight:600;text-decoration:none">🎟️ Cupons</a>`,
+          }}
+        />
+        <p className="muted">
+          Páginas de cupons: <a href="https://www.mercadolivre.com.br/cupons" target="_blank" rel="noreferrer">Mercado Livre ↗</a> ·{" "}
+          <a href="https://www.amazon.com.br/coupons" target="_blank" rel="noreferrer">Amazon ↗</a> · Shopee: página de cupons/campanha do app ou site.
+          No Mercado Livre, troque o link pelo seu meli.la antes de adicionar.
         </p>
       </div>
 

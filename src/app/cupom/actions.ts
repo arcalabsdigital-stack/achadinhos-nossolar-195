@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { batchDateValue } from "@/lib/time";
 import { amazonTag, detectSource, hashId } from "@/lib/links";
+import { shortLink } from "@/lib/shopee";
 
 const STORES: Record<string, string> = { ml: "Mercado Livre", shopee: "Shopee", amazon: "Amazon" };
 const f = (fd: FormData, k: string) => String(fd.get(k) ?? "").trim();
@@ -23,6 +24,10 @@ export async function addCoupon(fd: FormData) {
   }
 
   const source = detectSource(link);
+  // Página da Shopee (não afiliada): gera o link curto de afiliado pela API
+  if (source === "shopee" && /(^|\.)shopee\.com\.br\//.test(link.replace(/^https?:\/\//, "")) && process.env.SHOPEE_APP_ID) {
+    link = await shortLink(link).catch(() => link);
+  }
   if (source === "amazon" && !/[?&]tag=/.test(link)) {
     link += `${link.includes("?") ? "&" : "?"}tag=${amazonTag()}`;
   }
