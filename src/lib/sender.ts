@@ -43,7 +43,13 @@ export async function processDueOffers(log: (m: string) => void = console.log) {
       }
     }
 
-    const text = finalMessage(offer.message, offer.id, offer.product.source, offer.affiliateLink);
+    // Shopee antiga sem preço antigo salvo: reconstrói a partir do desconto da loja
+    if (offer.product.source === "shopee" && offer.originalPrice == null && Number(offer.realDiscountPct ?? 0) >= 5) {
+      const op = Math.round((Number(offer.price) / (1 - Number(offer.realDiscountPct) / 100)) * 100) / 100;
+      await prisma.offer.update({ where: { id: offer.id }, data: { originalPrice: op } });
+      offer.originalPrice = op as unknown as typeof offer.originalPrice;
+    }
+    const text = await finalMessage(offer, offer.product.source);
 
     // imagem montada uma vez por oferta (quadrada, alta resolução, selo de desconto)
     let media: string | null = null;

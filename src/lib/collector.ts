@@ -108,10 +108,13 @@ export async function collect(log: (m: string) => void = console.log): Promise<C
   for (const c of shortlist) {
     if (created >= s.batchSize) break;
     const tone = c.p.price <= threshold ? "animado" : "curador";
+    const rate = c.p.priceDiscountRate ?? 0;
+    const originalPrice = rate >= 5 && rate < 95 ? Math.round((c.p.price / (1 - rate / 100)) * 100) / 100 : null;
     try {
       const copy = await writeOffer({
         title: c.p.productName,
         price: c.p.price,
+        originalPrice,
         lowest30d: c.lowest30d,
         realDiscountPct: c.discount,
         rating: c.p.ratingStar,
@@ -125,6 +128,7 @@ export async function collect(log: (m: string) => void = console.log): Promise<C
           productId: c.productId,
           batchDate,
           price: c.p.price,
+          originalPrice,
           lowest30d: c.lowest30d,
           realDiscountPct: c.discount,
           commissionRate: c.p.commissionRate,
