@@ -27,7 +27,7 @@ export async function fillQueue() {
   });
 
   const waiting = await prisma.offer.findMany({
-    where: { status: "approved" },
+    where: { status: "approved", affiliateLink: { not: "" } },
     orderBy: [{ updatedAt: "asc" }, { score: "desc" }],
     select: { id: true },
   });

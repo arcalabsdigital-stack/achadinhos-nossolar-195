@@ -35,6 +35,28 @@ if(/amazon\\.com\\.br$/.test(h)){
   var HT=document.documentElement.innerHTML;
   var reais=function(a){var mm=String(a||'').match(/([\\d.]+)\\s*reais(?:\\s*com\\s*(\\d+)\\s*centavos)?/i);return mm?Number(mm[1].replace(/\\./g,''))+(mm[2]?Number(mm[2])/100:0):0;};
   var amt=function(e){if(!e)return 0;var v=reais(e.getAttribute('aria-label'));if(v)return v;var f=$('.andes-money-amount__fraction',e),c=$('.andes-money-amount__cents',e);return f?Number(txt(f).replace(/\\./g,'')+'.'+(c?txt(c):'00')):0;};
+  if(!$('h1.ui-pdp-title')){
+    var seenL={},items=[];
+    $$('a[href]').forEach(function(a){
+      if(items.length>=100)return;
+      var href=a.href||'';var m=href.match(/MLB-?(\\d{6,})/i);if(!m)return;var id='MLB'+m[1];if(seenL[id])return;
+      var card=a.closest('.poly-card,.andes-card,li,article')||(a.parentElement&&a.parentElement.parentElement);if(!card)return;
+      if(txt(card).length>1500)return;
+      var im=$('img',card);
+      var title=txt($('.poly-component__title',card))||a.getAttribute('title')||txt(a)||(im&&im.getAttribute('alt'))||'';
+      if(title.length<8)return;
+      var prev=$('.andes-money-amount--previous',card);
+      var cur=$('.poly-price__current .andes-money-amount',card);
+      if(!cur){$$('.andes-money-amount',card).some(function(e){if(e.classList.contains('andes-money-amount--previous')||e.closest('s,del,[class*="installment"]'))return false;cur=e;return true;});}
+      var price=amt(cur);if(!price)return;
+      var ct=txt(card);var cm=ct.match(/GANHOS?\\s*(\\d{1,2})\\s*%/i);
+      seenL[id]=1;
+      items.push({id:id,url:href.split('#')[0],title:title.slice(0,180),price:price,old:amt(prev),img:im?(im.getAttribute('data-src')||im.getAttribute('src')||''):'',rating:num(txt($('.poly-reviews__rating',card)))||0,commission:cm?Number(cm[1]):0});
+    });
+    if(items.length<2){alert('Não achei produtos nesta página. Use em Ofertas do dia, no Hub de afiliados ou numa busca do Mercado Livre.');return;}
+    if(!confirm('Importar '+items.length+' produtos desta página? O sistema escolhe os melhores e escreve os textos. O link meli.la você gera depois, só nos escolhidos.'))return;
+    var iu=APP+'/importar#'+encodeURIComponent(JSON.stringify(items));var iw=window.open(iu,'_blank');if(!iw)location.href=iu;return;
+  }
   var pbox=$('.ui-pdp-price__main-container')||$('.ui-pdp-container__row--price')||$('.ui-pdp-price');
   if(pbox){d.price=amt($('.ui-pdp-price__second-line .andes-money-amount',pbox))||amt($('.andes-money-amount:not(.andes-money-amount--previous)',pbox));d.old=amt($('.andes-money-amount--previous',pbox));}
   var jv=function(re){var mm=HT.match(re);return mm?Number(mm[1]):0;};
@@ -56,7 +78,7 @@ if(!d.coupon)d.coupon=findCoupon();
 
 var fmt=function(n){return n?n.toFixed(2).replace('.',','):'';};
 var q=function(k,v){return '&'+k+'='+encodeURIComponent(String(v||'').trim());};
-var send=function(){var u=APP+'/nova-oferta?via=favorito'+q('site',d.site)+q('link',d.link)+q('title',d.title.slice(0,150))+q('price',fmt(d.price))+q('originalPrice',fmt(d.old))+q('imageUrl',d.img)+q('coupon',d.coupon);var w=window.open(u,'_blank');if(!w)location.href=u;};
+var send=function(){var hk=(location.hash.match(/achadinhos=([A-Za-z0-9]+)/)||[])[1];if(hk&&d.link){var vu=APP+'/api/vincular?offer='+hk+q('link',d.link);var vw=window.open(vu,'_blank');if(!vw)location.href=vu;return;}var u=APP+'/nova-oferta?via=favorito'+q('site',d.site)+q('link',d.link)+q('title',d.title.slice(0,150))+q('price',fmt(d.price))+q('originalPrice',fmt(d.old))+q('imageUrl',d.img)+q('coupon',d.coupon);var w=window.open(u,'_blank');if(!w)location.href=u;};
 if(d.site!=='ml'){send();return;}
 var roots=function(){var out=[document],i=0;while(i<out.length){var r=out[i++];var all=r.querySelectorAll?r.querySelectorAll('*'):[];for(var k=0;k<all.length;k++){var e=all[k];if(e.shadowRoot)out.push(e.shadowRoot);if(e.tagName==='IFRAME'){try{if(e.contentDocument)out.push(e.contentDocument);}catch(x){}}}}return out;};
 var deep=function(sel){var res=[];roots().forEach(function(r){Array.prototype.push.apply(res,Array.prototype.slice.call(r.querySelectorAll(sel)));});return res;};

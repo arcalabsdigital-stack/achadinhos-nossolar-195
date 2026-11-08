@@ -78,13 +78,15 @@ export default async function Aprovacao({ searchParams }: { searchParams: Promis
       {pending.length > 0 && (
         <form action={approveSelected}>
           {pending.map((o) => (
-            <div className="card" key={o.id}>
+            <div className="card" key={o.id} id={o.id}>
               <div className="row">
                 {o.product.imageUrl && <img className="thumb" src={o.product.imageUrl} alt="" />}
                 <div>
                   <div className="title">{o.product.title}</div>
                   <div className="chips">
-                    <span className="chip">{({ amazon: "Amazon", shopee: "Shopee", manual: "Link" } as Record<string, string>)[o.product.source]}</span>
+                    <span className="chip">{o.product.externalId.startsWith("MLB") ? "Mercado Livre" : ({ amazon: "Amazon", shopee: "Shopee", manual: "Link" } as Record<string, string>)[o.product.source]}</span>
+                    {!o.affiliateLink ? <span className="chip warn">🔗 falta link</span> : null}
+                    {o.commissionRate ? <span className="chip ok">ganhos {Math.round(Number(o.commissionRate) * 100)}%</span> : null}
                     {o.product.category === "cupom" ? <span className="chip ok">🎟️ cupom</span> : <span className="chip ok">{brl(o.price)}</span>}
                     {o.coupon && o.product.category !== "cupom" ? <span className="chip ok">🎟️ {o.coupon}</span> : null}
                     {o.realDiscountPct ? <span className="chip ok">-{Math.round(o.realDiscountPct)}%</span> : null}
@@ -97,6 +99,14 @@ export default async function Aprovacao({ searchParams }: { searchParams: Promis
                 </div>
               </div>
               <textarea name={`msg_${o.id}`} defaultValue={o.message} />
+              {!o.affiliateLink && (
+                <div className="flex" style={{ marginTop: 8, alignItems: "center" }}>
+                  <a href={`${o.product.productUrl.split("#")[0]}#achadinhos=${o.id}`} target="_blank" style={{ whiteSpace: "nowrap" }}>
+                    🔗 gerar link ↗
+                  </a>
+                  <input name={`link_${o.id}`} placeholder="ou cole o meli.la aqui" style={{ flex: 1 }} />
+                </div>
+              )}
               <div className="flex" style={{ marginTop: 8 }}>
                 <label className="pick" style={{ flex: 1, marginTop: 0 }}>
                   <input type="checkbox" name="ids" value={o.id} /> Aprovar

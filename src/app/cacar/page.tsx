@@ -8,6 +8,7 @@ const LINKS: { title: string; url: string; note: string }[] = [
   { title: "Mais vendidos em Cozinha", url: "https://www.amazon.com.br/gp/bestsellers/kitchen", note: "Utensílios, potes, eletroportáteis" },
   { title: "Em alta em Casa (subindo rápido)", url: "https://www.amazon.com.br/gp/movers-and-shakers/home", note: "Produtos ganhando vendas agora" },
   { title: "Em alta em Cozinha", url: "https://www.amazon.com.br/gp/movers-and-shakers/kitchen", note: "Produtos ganhando vendas agora" },
+  { title: "Mercado Livre — Ofertas do dia", url: "https://www.mercadolivre.com.br/ofertas", note: "Clique no ➕ Achadinhos aqui para importar a lista inteira" },
   { title: "Mercado Livre — Hub de afiliados (Ganhos extras)", url: "https://www.mercadolivre.com.br/afiliados/hub", note: "Filtre por Ganhos extras + categoria: comissões maiores" },
   { title: "Ofertas da Shopee (painel de afiliado)", url: "https://affiliate.shopee.com.br/offer/product_offer", note: "Gere o link em “Obter link” e cole em ➕ Oferta" },
 ];
@@ -33,6 +34,8 @@ export default function Cacar() {
           Abra a página de um produto na <b>Amazon</b>, no <b>Mercado Livre</b> ou na <b>Shopee</b> e clique em <b>➕ Achadinhos</b> na barra de
           favoritos. O painel abre com nome, preço, preço antigo e foto preenchidos. Na Amazon a tag de associado é aplicada
           sozinha; no Mercado Livre, cole o seu link meli.la no campo Link. Depois é só clicar em <b>Adicionar</b>.
+          <br />
+          <b>Lote do Mercado Livre:</b> numa página de <b>lista</b> do ML (Ofertas do dia, Hub de afiliados, uma busca), o mesmo botão importa todos os produtos da página — o sistema escolhe os melhores e escreve os textos; na aprovação você gera o 🔗 link só dos escolhidos.
           <br />
           (Se você já tinha o botão, arraste de novo para atualizar — a versão nova também funciona na Shopee e preenche o cupom quando a página mostra um.)
         </p>

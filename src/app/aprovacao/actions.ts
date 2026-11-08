@@ -10,17 +10,27 @@ import { collect } from "@/lib/collector";
 /** Aprova as ofertas marcadas e coloca na fila (ocupam os próximos horários livres, hoje ou amanhã) */
 export async function approveSelected(formData: FormData) {
   const ids = formData.getAll("ids").map(String);
-  if (!ids.length) return;
+  // links meli.la colados nas ofertas do lote do ML (mesmo nas não marcadas)
+  for (const [k, v] of formData.entries()) {
+    const link = String(v).trim();
+    if (k.startsWith("link_") && /^https?:\/\/\S+$/.test(link)) {
+      await prisma.offer.updateMany({ where: { id: k.slice(5), status: "pending" }, data: { affiliateLink: link } });
+    }
+  }
+  if (!ids.length) return revalidatePath("/aprovacao");
+  let noLink = 0;
   // mantém a ordem da tela (melhor nota primeiro): cada update tem um updatedAt maior
   for (const id of ids) {
     const message = String(formData.get(`msg_${id}`) ?? "").trim();
-    await prisma.offer.updateMany({
-      where: { id, status: "pending" },
+    const r = await prisma.offer.updateMany({
+      where: { id, status: "pending", affiliateLink: { not: "" } },
       data: { status: "approved", ...(message ? { message } : {}) },
     });
+    if (!r.count) noLink++;
   }
   await fillQueue();
   revalidatePath("/aprovacao");
+  if (noLink) redirect(`/aprovacao?coleta=${encodeURIComponent(`⚠️ ${noLink} oferta(s) sem link de afiliado ficaram pendentes. Gere o 🔗 link e aprove de novo.`)}`);
 }
 
 export async function rejectOne(id: string, formData: FormData) {
